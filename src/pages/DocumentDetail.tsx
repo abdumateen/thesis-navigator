@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ChatInterface } from "@/components/ChatInterface";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,295 @@ import {
   BookOpen,
   Table,
   Image,
+  Sparkles,
+  Loader2,
+  Lightbulb,
+  Target,
+  HelpCircle,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
+
+type DetailTab = "chat" | "novelty";
+
+interface NoveltyResult {
+  summary: string;
+  novelContributions: Array<{
+    contribution: string;
+    significance: string;
+    noveltyLevel: string;
+  }>;
+  methodology: {
+    approach: string;
+    strengths: string[];
+    limitations: string[];
+  };
+  positionInField: {
+    buildsOn: string[];
+    differentiatesFrom: string[];
+    openQuestions: string[];
+  };
+}
+
+const NOVELTY_COLORS: Record<string, string> = {
+  high: "bg-primary/10 text-primary",
+  moderate: "bg-amber-500/10 text-amber-600",
+  incremental: "bg-muted text-muted-foreground",
+};
+
+function NoveltyPanel({ documentId }: { documentId: string }) {
+  const [result, setResult] = useState<NoveltyResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const doc = useQuery(
+    api.documents.getChunks,
+    documentId ? { documentIds: [documentId as Id<"documents">] } : "skip",
+  );
+
+  const analyzeNovelty = useAction(
+    api.researchAnalysis.analyzeNovelty,
+  );
+
+  const docData = doc?.[0];
+
+  const handleAnalyze = useCallback(async () => {
+    if (!docData) return;
+    setIsAnalyzing(true);
+    try {
+      const fullText = docData.chunks.map((c) => c.text).join("\n\n");
+      const analysis = await analyzeNovelty({
+        fullText,
+        title: docData.documentTitle,
+      });
+      setResult(analysis);
+    } catch (err) {
+      console.error("Novelty analysis failed:", err);
+      toast.error("Analysis failed. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [docData, analyzeNovelty]);
+
+  if (!docData) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+        <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+          <Sparkles className="size-6 text-primary" />
+        </div>
+        <h3 className="text-sm font-medium text-foreground">
+          Novelty Assessment
+        </h3>
+        <p className="mt-2 max-w-md text-xs text-muted-foreground leading-relaxed">
+          Analyze this paper to identify its novel contributions, methodological
+          strengths and limitations, and how it positions itself within the
+          broader research landscape.
+        </p>
+        <Button
+          className="mt-6 h-10 px-6 gap-2 text-sm"
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+        >
+          {isAnalyzing ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          {isAnalyzing ? "Analyzing..." : "Analyze novelty"}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="max-w-3xl mx-auto px-8 py-8 space-y-8">
+        {/* Summary */}
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+            Summary
+          </h3>
+          <p className="text-sm leading-relaxed text-foreground/80">
+            {result.summary}
+          </p>
+        </div>
+
+        <Separator />
+
+        {/* Novel Contributions */}
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+            Novel Contributions
+          </h3>
+          <div className="space-y-3">
+            {result.novelContributions.map((c, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-card p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {c.contribution}
+                    </p>
+                    <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                      {c.significance}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize ${NOVELTY_COLORS[c.noveltyLevel] || NOVELTY_COLORS.incremental}`}
+                  >
+                    {c.noveltyLevel}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Methodology */}
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+            Methodology
+          </h3>
+          <p className="text-sm text-foreground/80 mb-3">
+            {result.methodology.approach}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="size-3.5 text-primary" />
+                <p className="text-xs font-medium text-foreground">Strengths</p>
+              </div>
+              <ul className="space-y-1.5">
+                {result.methodology.strengths.map((s, i) => (
+                  <li
+                    key={i}
+                    className="text-xs text-muted-foreground leading-relaxed flex gap-2"
+                  >
+                    <span className="text-primary mt-0.5">+</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <HelpCircle className="size-3.5 text-amber-500" />
+                <p className="text-xs font-medium text-foreground">Limitations</p>
+              </div>
+              <ul className="space-y-1.5">
+                {result.methodology.limitations.map((l, i) => (
+                  <li
+                    key={i}
+                    className="text-xs text-muted-foreground leading-relaxed flex gap-2"
+                  >
+                    <span className="text-amber-500 mt-0.5">−</span>
+                    {l}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Position in Field */}
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+            Position in Field
+          </h3>
+          <div className="space-y-4">
+            {result.positionInField.buildsOn.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1.5">
+                  Builds on
+                </p>
+                <ul className="space-y-1">
+                  {result.positionInField.buildsOn.map((b, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-muted-foreground leading-relaxed pl-3 border-l-2 border-primary/30"
+                    >
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result.positionInField.differentiatesFrom.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1.5">
+                  Differentiates from
+                </p>
+                <ul className="space-y-1">
+                  {result.positionInField.differentiatesFrom.map((d, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-muted-foreground leading-relaxed pl-3 border-l-2 border-border"
+                    >
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result.positionInField.openQuestions.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-foreground mb-1.5">
+                  Open questions
+                </p>
+                <ul className="space-y-1">
+                  {result.positionInField.openQuestions.map((q, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-muted-foreground leading-relaxed pl-3 border-l-2 border-amber-500/30"
+                    >
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Re-analyze button */}
+        <div className="pt-4 pb-8">
+          <Button
+            variant="outline"
+            className="h-9 text-xs gap-2"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+            Re-analyze
+          </Button>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
 
 export default function DocumentDetail() {
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
   const [showChunks, setShowChunks] = useState(false);
+  const [detailTab, setDetailTab] = useState<DetailTab>("chat");
   const [activeConversation, setActiveConversation] =
     useState<Id<"conversations"> | null>(null);
 
@@ -56,7 +337,6 @@ export default function DocumentDetail() {
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Sidebar: Document info */}
       <aside className="flex w-80 flex-col border-r border-border bg-card">
-        {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button
             variant="ghost"
@@ -71,7 +351,6 @@ export default function DocumentDetail() {
           </span>
         </div>
 
-        {/* Document info */}
         <div className="px-5 py-5">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -127,8 +406,7 @@ export default function DocumentDetail() {
 
         <Separator />
 
-        {/* Chunks viewer */}
-        {showChunks && (
+        {showChunks ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="px-5 py-2">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -172,34 +450,78 @@ export default function DocumentDetail() {
               </div>
             </ScrollArea>
           </div>
-        )}
-
-        {!showChunks && (
+        ) : (
           <div className="flex-1 px-5 py-4">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
-              Ask about this paper
+              Quick actions
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Use the chat to ask questions about this specific document. All
-              answers will be grounded in this paper&apos;s content.
-            </p>
+            <div className="space-y-1.5">
+              <Button
+                variant={detailTab === "chat" ? "default" : "ghost"}
+                className="w-full justify-start gap-2 h-8 text-xs"
+                onClick={() => setDetailTab("chat")}
+              >
+                <MessageSquare className="size-3.5" />
+                Chat with this paper
+              </Button>
+              <Button
+                variant={detailTab === "novelty" ? "default" : "ghost"}
+                className="w-full justify-start gap-2 h-8 text-xs"
+                onClick={() => setDetailTab("novelty")}
+              >
+                <Sparkles className="size-3.5" />
+                Novelty assessment
+              </Button>
+            </div>
           </div>
         )}
       </aside>
 
-      {/* Main: Chat about this document */}
+      {/* Main area */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center gap-3 border-b border-border px-6 py-2.5 bg-card/50">
-          <MessageSquare className="size-4 text-primary" />
+          {detailTab === "chat" ? (
+            <MessageSquare className="size-4 text-primary" />
+          ) : (
+            <Sparkles className="size-4 text-primary" />
+          )}
           <h1 className="text-sm font-medium text-foreground">
-            Chat with this paper
+            {detailTab === "chat"
+              ? "Chat with this paper"
+              : "Novelty Assessment"}
           </h1>
+          <div className="flex-1" />
+          <div className="flex gap-1">
+            <Button
+              variant={detailTab === "chat" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => setDetailTab("chat")}
+            >
+              <MessageSquare className="size-3" />
+              Chat
+            </Button>
+            <Button
+              variant={detailTab === "novelty" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => setDetailTab("novelty")}
+            >
+              <Sparkles className="size-3" />
+              Novelty
+            </Button>
+          </div>
         </header>
-        <ChatInterface
-          conversationId={activeConversation}
-          selectedDocumentIds={[documentId as Id<"documents">]}
-          onConversationCreated={setActiveConversation}
-        />
+
+        {detailTab === "chat" ? (
+          <ChatInterface
+            conversationId={activeConversation}
+            selectedDocumentIds={[documentId as Id<"documents">]}
+            onConversationCreated={setActiveConversation}
+          />
+        ) : (
+          <NoveltyPanel documentId={documentId} />
+        )}
       </main>
     </div>
   );

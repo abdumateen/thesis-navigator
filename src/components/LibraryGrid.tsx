@@ -76,15 +76,28 @@ export function LibraryGrid() {
           {docs.length} paper{docs.length !== 1 ? "s" : ""}
         </span>
         {docs.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/graph")}
-          >
-            <Network className="size-3.5" />
-            Graph
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => navigate("/graph")}
+            >
+              <Network className="size-3.5" />
+              Graph
+            </Button>
+            {docs.length >= 2 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/gaps")}
+              >
+                <Search className="size-3.5" />
+                Gaps
+              </Button>
+            )}
+          </>
         )}
       </div>
 

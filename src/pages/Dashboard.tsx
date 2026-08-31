@@ -18,6 +18,7 @@ import {
   Plus,
   BookOpen,
   Network,
+  Search,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -312,14 +313,25 @@ export default function Dashboard() {
                 ))}
               </div>
             </ScrollArea>
-            <Button
-              variant="outline"
-              className="w-full h-9 text-xs gap-2 border-border/60 mt-2"
-              onClick={() => navigate("/graph")}
-            >
-              <Network className="size-3.5" />
-              Research Graph
-            </Button>
+            <div className="flex gap-1.5 mt-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-9 text-xs gap-1.5 border-border/60"
+                onClick={() => navigate("/graph")}
+              >
+                <Network className="size-3.5" />
+                Graph
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-9 text-xs gap-1.5 border-border/60"
+                onClick={() => navigate("/gaps")}
+                disabled={docs.length < 2}
+              >
+                <Search className="size-3.5" />
+                Gaps
+              </Button>
+            </div>
             <PdfUploader onUploadComplete={() => {}} />
           </div>
         )}
