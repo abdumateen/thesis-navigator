@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,8 +126,7 @@ export function ChatInterface({
 
   const createConversation = useMutation(api.conversations.create);
   const addMessage = useMutation(api.conversations.addMessage);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const askQuestion = useMutation(api.askQuestion.ask as any);
+  const askQuestion = useAction(api.askQuestion.ask);
 
   const messages: Message[] | undefined = useQuery(
     api.conversations.getMessages,
