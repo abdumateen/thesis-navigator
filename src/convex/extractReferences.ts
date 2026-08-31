@@ -1,0 +1,108 @@
+"use node";
+
+import { action } from "./_generated/server";
+import { v } from "convex/values";
+import OpenAI from "openai";
+import { searchByTitle } from "./openalex";
+
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+/** Extract reference strings from paper text using GPT-4o-mini. */
+async function extractReferenceStrings(fullText: string): Promise<string[]> {
+  const openai = getOpenAI();
+
+  // Only send the last 20% of the paper where references usually are
+  const refSection = fullText.slice(
+    Math.floor(fullText.length * 0.7),
+  );
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `Extract all academic references/citations from the text. Return ONLY a JSON array of reference title strings (the title portion of each citation). Example:
+["Deep Residual Learning for Image Recognition", "Attention Is All You Need", "BERT: Pre-training of Deep Bidirectional Transformers"]
+
+If no references are found, return an empty array: []
+Do not include any text before or after the JSON array.`,
+      },
+      {
+        role: "user",
+        content: `Extract reference titles from this section of an academic paper:\n\n${refSection.slice(-6000)}`,
+      },
+    ],
+    temperature: 0.1,
+    max_tokens: 2000,
+  });
+
+  const content = response.choices[0]?.message?.content ?? "[]";
+
+  // Parse JSON from the response, handling markdown code blocks
+  const jsonMatch = content.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) return [];
+
+  try {
+    const refs = JSON.parse(jsonMatch[0]);
+    return Array.isArray(refs)
+      ? refs.filter((r: unknown) => typeof r === "string").slice(0, 30)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Extract references from a document and fetch their metadata from OpenAlex.
+ * Returns the papers found and any citation links.
+ */
+export const processDocumentReferences = action({
+  args: {
+    documentId: v.id("documents"),
+    fullText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI API key not configured.");
+    }
+
+    // Step 1: Extract reference strings using LLM
+    const referenceTitles = await extractReferenceStrings(args.fullText);
+
+    if (referenceTitles.length === 0) {
+      return { papers: [], links: [] };
+    }
+
+    // Step 2: Look up each reference in OpenAlex
+    const papers: Array<{
+      title: string;
+      authors: string;
+      year: number | null;
+      citationCount: number;
+      abstract: string;
+      openAlexId: string;
+      doi: string | null;
+    }> = [];
+
+    // Batch lookups - search by title
+    for (const title of referenceTitles) {
+      try {
+        const metadata = await searchByTitle(title);
+        if (metadata) {
+          papers.push(metadata);
+        }
+        // Small delay to be respectful to OpenAlex API
+        await new Promise((r) => setTimeout(r, 100));
+      } catch (err) {
+        console.error(`Failed to look up "${title}":`, err);
+      }
+    }
+
+    return {
+      papers: papers.slice(0, 20), // Limit to top 20
+      links: [], // Links will be created after papers are saved
+    };
+  },
+});

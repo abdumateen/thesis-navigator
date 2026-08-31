@@ -62,6 +62,50 @@ const schema = defineSchema(
       createdAt: v.number(),
     }).index("by_user", ["userId"]),
 
+    // Thesis Navigator: fetched paper metadata (from OpenAlex)
+    papers: defineTable({
+      userId: v.string(),
+      sourceDocumentId: v.optional(v.id("documents")),
+      title: v.string(),
+      authors: v.optional(v.string()),
+      year: v.optional(v.number()),
+      citationCount: v.optional(v.number()),
+      abstract: v.optional(v.string()),
+      openAlexId: v.optional(v.string()),
+      doi: v.optional(v.string()),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_openAlex", ["openAlexId"]),
+
+    // Thesis Navigator: citation links between papers
+    paperLinks: defineTable({
+      userId: v.string(),
+      sourcePaperId: v.id("papers"),
+      targetPaperId: v.id("papers"),
+      relationship: v.union(
+        v.literal("cites"),
+        v.literal("shared_concept"),
+      ),
+      concept: v.optional(v.string()),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_source", ["sourcePaperId"]),
+
+    // Thesis Navigator: extracted entities (methods, datasets, metrics)
+    entities: defineTable({
+      userId: v.string(),
+      name: v.string(),
+      type: v.union(
+        v.literal("method"),
+        v.literal("dataset"),
+        v.literal("metric"),
+        v.literal("concept"),
+      ),
+      documentIds: v.array(v.id("documents")),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_name", ["name"]),
+
     // Thesis Navigator: chat messages with source citations
     messages: defineTable({
       conversationId: v.id("conversations"),

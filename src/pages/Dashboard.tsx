@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Plus,
   BookOpen,
+  Network,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -291,7 +292,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Library mode: show upload in sidebar */}
+        {/* Library mode: show upload + graph link in sidebar */}
         {tab === "library" && (
           <div className="flex-1 overflow-hidden flex flex-col px-3 pb-3 pt-2">
             <ScrollArea className="flex-1 -mx-1 mb-3">
@@ -311,6 +312,14 @@ export default function Dashboard() {
                 ))}
               </div>
             </ScrollArea>
+            <Button
+              variant="outline"
+              className="w-full h-9 text-xs gap-2 border-border/60 mt-2"
+              onClick={() => navigate("/graph")}
+            >
+              <Network className="size-3.5" />
+              Research Graph
+            </Button>
             <PdfUploader onUploadComplete={() => {}} />
           </div>
         )}
