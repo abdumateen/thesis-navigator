@@ -32,12 +32,48 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // Thesis Navigator: uploaded research papers
+    documents: defineTable({
+      userId: v.string(),
+      title: v.string(),
+      filename: v.string(),
+      fullText: v.string(),
+      chunkCount: v.number(),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Thesis Navigator: text chunks extracted from documents
+    chunks: defineTable({
+      documentId: v.id("documents"),
+      text: v.string(),
+      index: v.number(),
+      createdAt: v.number(),
+    }).index("by_document", ["documentId"]),
+
+    // Thesis Navigator: chat conversations
+    conversations: defineTable({
+      userId: v.string(),
+      title: v.string(),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"]),
+
+    // Thesis Navigator: chat messages with source citations
+    messages: defineTable({
+      conversationId: v.id("conversations"),
+      role: v.union(v.literal("user"), v.literal("assistant")),
+      content: v.string(),
+      sources: v.optional(
+        v.array(
+          v.object({
+            documentId: v.id("documents"),
+            documentTitle: v.string(),
+            chunkText: v.string(),
+            chunkIndex: v.number(),
+          }),
+        ),
+      ),
+      createdAt: v.number(),
+    }).index("by_conversation", ["conversationId"]),
   },
   {
     schemaValidation: false,
