@@ -35,7 +35,7 @@ export function LibraryGrid() {
   const documents = useQuery(api.documents.list);
   const deleteDocument = useMutation(api.documents.remove);
 
-  const docs = documents ?? [];
+  const docs = useMemo(() => documents ?? [], [documents]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return docs;

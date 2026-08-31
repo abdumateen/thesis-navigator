@@ -30,10 +30,8 @@ interface Message {
 
 function SourceCard({
   source,
-  index,
 }: {
   source: NonNullable<Message["sources"]>[number];
-  index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -95,7 +93,7 @@ function MessageBubble({ message }: { message: Message }) {
             </p>
             <div className="space-y-1">
               {message.sources.map((source, i) => (
-                <SourceCard key={i} source={source} index={i} />
+                <SourceCard key={i} source={source} />
               ))}
             </div>
           </div>
@@ -128,6 +126,7 @@ export function ChatInterface({
 
   const createConversation = useMutation(api.conversations.create);
   const addMessage = useMutation(api.conversations.addMessage);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const askQuestion = useMutation(api.askQuestion.ask as any);
 
   const messages: Message[] | undefined = useQuery(

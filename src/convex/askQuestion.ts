@@ -151,6 +151,7 @@ ${context}
 
     // Build source references
     const sources = relevantChunks.map((chunk) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       documentId: chunk.documentId as any,
       documentTitle: chunk.documentTitle,
       chunkText: chunk.chunkText.slice(0, 300) + (chunk.chunkText.length > 300 ? "..." : ""),

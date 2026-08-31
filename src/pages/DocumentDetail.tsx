@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -12,18 +12,9 @@ import {
   Trash2,
   MessageSquare,
   BookOpen,
-  Clock,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
-
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
 
 export default function DocumentDetail() {
   const { documentId } = useParams<{ documentId: string }>();
