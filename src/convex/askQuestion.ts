@@ -20,14 +20,23 @@ function findRelevantChunks(
     documentId: string;
     documentTitle: string;
     documentFilename: string;
-    chunks: Array<{ text: string; index: number }>;
+    chunks: Array<{
+      text: string;
+      index: number;
+      chunkType?: string;
+      pageNumber?: number;
+      imageUrl?: string;
+    }>;
   }>,
-  topK: number = 8,
+  topK: number = 10,
 ): Array<{
   documentId: string;
   documentTitle: string;
   chunkText: string;
   chunkIndex: number;
+  chunkType?: string;
+  pageNumber?: number;
+  imageUrl?: string;
   score: number;
 }> {
   const queryTerms = query
@@ -40,6 +49,9 @@ function findRelevantChunks(
     documentTitle: string;
     chunkText: string;
     chunkIndex: number;
+    chunkType?: string;
+    pageNumber?: number;
+    imageUrl?: string;
     score: number;
   }> = [];
 
@@ -48,26 +60,30 @@ function findRelevantChunks(
       const textLower = chunk.text.toLowerCase();
       let score = 0;
       for (const term of queryTerms) {
-        // Count occurrences of each query term
         const regex = new RegExp(term, "gi");
         const matches = textLower.match(regex);
         if (matches) {
           score += matches.length;
         }
       }
+      // Boost tables and figures slightly since they often contain key data
+      if (chunk.chunkType === "table") score *= 1.3;
+      if (chunk.chunkType === "figure") score *= 1.2;
       if (score > 0) {
         scored.push({
           documentId: doc.documentId,
           documentTitle: doc.documentTitle,
           chunkText: chunk.text,
           chunkIndex: chunk.index,
+          chunkType: chunk.chunkType,
+          pageNumber: chunk.pageNumber,
+          imageUrl: chunk.imageUrl,
           score,
         });
       }
     }
   }
 
-  // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, topK);
 }
@@ -113,16 +129,29 @@ export const ask = action({
 
     // Build context for the LLM
     const contextParts = relevantChunks.map((chunk, i) => {
-      return `[Source ${i + 1}: "${chunk.documentTitle}" (chunk ${chunk.chunkIndex + 1})]\n${chunk.chunkText}`;
+      const typeLabel = chunk.chunkType === "table"
+        ? "[TABLE]"
+        : chunk.chunkType === "figure"
+          ? "[FIGURE]"
+          : "[TEXT]";
+      const pageLabel = chunk.pageNumber ? ` p.${chunk.pageNumber}` : "";
+      return `[Source ${i + 1}: "${chunk.documentTitle}" ${typeLabel} (chunk ${chunk.chunkIndex + 1}${pageLabel})]\n${chunk.chunkText}`;
     });
 
     const context = contextParts.join("\n\n---\n\n");
 
     const systemPrompt = `You are Thesis Navigator, an academic research assistant. You help graduate students understand and analyze research papers.
 
+The context includes three types of content:
+- [TEXT] — regular text excerpts from the paper
+- [TABLE] — extracted tables with their data preserved in markdown format
+- [FIGURE] — descriptions of figures, charts, and diagrams with their key data points
+
 When answering questions:
 - Base your answer ONLY on the provided document excerpts
 - Always cite your sources using [Source N] notation
+- When referencing a table, mention it is a table and cite the source
+- When referencing a figure or chart, describe what it shows and cite the source
 - If the provided context doesn't contain enough information to fully answer, say so clearly
 - Use precise academic language
 - Structure your answers clearly with headers when appropriate
@@ -154,8 +183,10 @@ ${context}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       documentId: chunk.documentId as any,
       documentTitle: chunk.documentTitle,
-      chunkText: chunk.chunkText.slice(0, 300) + (chunk.chunkText.length > 300 ? "..." : ""),
+      chunkText: chunk.chunkText.slice(0, 400) + (chunk.chunkText.length > 400 ? "..." : ""),
       chunkIndex: chunk.chunkIndex,
+      chunkType: chunk.chunkType,
+      pageNumber: chunk.pageNumber,
     }));
 
     return { answer, sources };

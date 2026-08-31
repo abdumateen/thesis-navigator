@@ -22,7 +22,16 @@ export const create = mutation({
     title: v.string(),
     filename: v.string(),
     fullText: v.string(),
-    chunks: v.array(v.string()),
+    chunks: v.array(
+      v.object({
+        text: v.string(),
+        chunkType: v.optional(
+          v.union(v.literal("text"), v.literal("table"), v.literal("figure")),
+        ),
+        pageNumber: v.optional(v.number()),
+        imageUrl: v.optional(v.string()),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = (await ctx.auth.getUserIdentity())?.subject;
@@ -37,12 +46,16 @@ export const create = mutation({
       createdAt: Date.now(),
     });
 
-    // Insert chunks in batches
+    // Insert chunks
     for (let i = 0; i < args.chunks.length; i++) {
+      const chunk = args.chunks[i];
       await ctx.db.insert("chunks", {
         documentId: docId,
-        text: args.chunks[i],
+        text: chunk.text,
         index: i,
+        chunkType: chunk.chunkType,
+        pageNumber: chunk.pageNumber,
+        imageUrl: chunk.imageUrl,
         createdAt: Date.now(),
       });
     }
@@ -84,7 +97,13 @@ export const getChunks = query({
       documentId: string;
       documentTitle: string;
       documentFilename: string;
-      chunks: Array<{ text: string; index: number }>;
+      chunks: Array<{
+        text: string;
+        index: number;
+        chunkType?: string;
+        pageNumber?: number;
+        imageUrl?: string;
+      }>;
     }> = [];
 
     for (const docId of args.documentIds) {
@@ -94,12 +113,18 @@ export const getChunks = query({
         .query("chunks")
         .withIndex("by_document", (q) => q.eq("documentId", docId))
         .collect();
-      results.push({
-        documentId: docId,
-        documentTitle: doc.title,
-        documentFilename: doc.filename,
-        chunks: chunks.map((c) => ({ text: c.text, index: c.index })),
-      });
+    results.push({
+      documentId: docId,
+      documentTitle: doc.title,
+      documentFilename: doc.filename,
+      chunks: chunks.map((c) => ({
+        text: c.text,
+        index: c.index,
+        chunkType: c.chunkType,
+        pageNumber: c.pageNumber,
+        imageUrl: c.imageUrl,
+      })),
+    });
     }
 
     return results;

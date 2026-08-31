@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
+  Table,
+  Image,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -24,6 +26,8 @@ interface Message {
     documentTitle: string;
     chunkText: string;
     chunkIndex: number;
+    chunkType?: string;
+    pageNumber?: number;
   }>;
   createdAt: number;
 }
@@ -42,10 +46,21 @@ function SourceCard({
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
       >
-        <FileText className="size-3 shrink-0 text-muted-foreground" />
+        {source.chunkType === "table" ? (
+          <Table className="size-3 shrink-0 text-primary" />
+        ) : source.chunkType === "figure" ? (
+          <Image className="size-3 shrink-0 text-primary" />
+        ) : (
+          <FileText className="size-3 shrink-0 text-muted-foreground" />
+        )}
         <span className="flex-1 truncate font-medium text-foreground/80">
           {source.documentTitle}
         </span>
+        {source.chunkType && source.chunkType !== "text" && (
+          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-primary">
+            {source.chunkType}
+          </span>
+        )}
         <span className="text-muted-foreground">#{source.chunkIndex + 1}</span>
         {expanded ? (
           <ChevronUp className="size-3 text-muted-foreground" />

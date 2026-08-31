@@ -12,6 +12,8 @@ import {
   Trash2,
   MessageSquare,
   BookOpen,
+  Table,
+  Image,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -140,10 +142,29 @@ export default function DocumentDetail() {
                     key={i}
                     className="rounded-lg border border-border/50 bg-muted/20 p-3"
                   >
-                    <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
-                      Chunk {i + 1}
-                    </p>
-                    <p className="text-xs leading-relaxed text-foreground/70">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {chunk.chunkType === "table" ? (
+                        <Table className="size-3 text-primary" />
+                      ) : chunk.chunkType === "figure" ? (
+                        <Image className="size-3 text-primary" />
+                      ) : (
+                        <FileText className="size-3 text-muted-foreground" />
+                      )}
+                      <p className="text-[10px] font-medium text-muted-foreground">
+                        Chunk {i + 1}
+                      </p>
+                      {chunk.chunkType && chunk.chunkType !== "text" && (
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-primary">
+                          {chunk.chunkType}
+                        </span>
+                      )}
+                      {chunk.pageNumber && (
+                        <span className="text-[9px] text-muted-foreground/60">
+                          p.{chunk.pageNumber}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs leading-relaxed text-foreground/70 whitespace-pre-wrap">
                       {chunk.text}
                     </p>
                   </div>
