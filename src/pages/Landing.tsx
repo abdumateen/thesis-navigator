@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Search, MessageSquare, ArrowRight, Sparkles } from "lucide-react";
+import { FileText, Search, MessageSquare, ArrowRight, Sparkles, Network } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const features = [
@@ -9,7 +9,7 @@ const features = [
     icon: FileText,
     title: "Upload your papers",
     description:
-      "Drop in PDFs from your research library. We extract the text, chunk it intelligently, and index every passage for instant retrieval.",
+      "Drop in PDFs from your research library. We extract text, tables, and figures — indexing every passage for instant retrieval.",
   },
   {
     icon: Search,
@@ -22,6 +22,12 @@ const features = [
     title: "Get cited answers",
     description:
       "Every answer links back to its source. Expand citations to verify claims, explore context, and trace ideas to their origin.",
+  },
+  {
+    icon: Network,
+    title: "Explore the research landscape",
+    description:
+      "Visualize citation networks and knowledge graphs. See how your papers connect, discover shared concepts, and find research gaps.",
   },
 ];
 
@@ -134,7 +140,7 @@ export default function Landing() {
           >
             How it works
           </motion.p>
-          <div className="grid gap-16 sm:grid-cols-3">
+          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -169,18 +175,18 @@ export default function Landing() {
               transition={{ duration: 0.5 }}
             >
               <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-primary">
-                Built for real research
+                Beyond simple Q&A
               </p>
               <h2 className="text-2xl font-light tracking-tight leading-snug sm:text-3xl">
-                Every citation is
+                Understand the full
                 <br />
-                <span className="font-semibold">verifiable and traceable.</span>
+                <span className="font-semibold">research landscape.</span>
               </h2>
               <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-                Thesis Navigator doesn&apos;t hallucinate references. Every answer
-                is grounded in your actual papers, with expandable source cards
-                that show exactly which document, which section, and which
-                passage informed each claim.
+                Thesis Navigator doesn&apos;t just answer questions. It extracts
+                tables and figures, maps citation networks, identifies shared
+                methods and datasets across papers, and visualizes the intellectual
+                structure of your research library.
               </p>
             </motion.div>
             <motion.div

@@ -10,6 +10,7 @@ import {
   Trash2,
   Clock,
   Eye,
+  Network,
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -74,6 +75,17 @@ export function LibraryGrid() {
         <span className="text-xs text-muted-foreground">
           {docs.length} paper{docs.length !== 1 ? "s" : ""}
         </span>
+        {docs.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate("/graph")}
+          >
+            <Network className="size-3.5" />
+            Graph
+          </Button>
+        )}
       </div>
 
       {/* Content */}
