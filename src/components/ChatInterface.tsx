@@ -233,7 +233,6 @@ export function ChatInterface({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-6 py-8">
           {(!messages || messages.length === 0) && (
@@ -274,7 +273,6 @@ export function ChatInterface({
         </div>
       </div>
 
-      {/* Input area */}
       <div className="border-t border-border bg-background p-4">
         <form
           onSubmit={handleSubmit}

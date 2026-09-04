@@ -32,7 +32,7 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // Thesis Navigator: uploaded research papers
+    // uploaded research papers
     documents: defineTable({
       userId: v.string(),
       title: v.string(),
@@ -42,7 +42,7 @@ const schema = defineSchema(
       createdAt: v.number(),
     }).index("by_user", ["userId"]),
 
-    // Thesis Navigator: text chunks extracted from documents
+    // text chunks extracted from documents
     chunks: defineTable({
       documentId: v.id("documents"),
       text: v.string(),
@@ -55,14 +55,14 @@ const schema = defineSchema(
       createdAt: v.number(),
     }).index("by_document", ["documentId"]),
 
-    // Thesis Navigator: chat conversations
+    // chat conversations
     conversations: defineTable({
       userId: v.string(),
       title: v.string(),
       createdAt: v.number(),
     }).index("by_user", ["userId"]),
 
-    // Thesis Navigator: fetched paper metadata (from OpenAlex)
+    // paper metadata fetched from OpenAlex
     papers: defineTable({
       userId: v.string(),
       sourceDocumentId: v.optional(v.id("documents")),
@@ -77,7 +77,7 @@ const schema = defineSchema(
     }).index("by_user", ["userId"])
       .index("by_openAlex", ["openAlexId"]),
 
-    // Thesis Navigator: citation links between papers
+    // citation links between papers
     paperLinks: defineTable({
       userId: v.string(),
       sourcePaperId: v.id("papers"),
@@ -91,7 +91,7 @@ const schema = defineSchema(
     }).index("by_user", ["userId"])
       .index("by_source", ["sourcePaperId"]),
 
-    // Thesis Navigator: extracted entities (methods, datasets, metrics)
+    // extracted research entities (methods, datasets, metrics)
     entities: defineTable({
       userId: v.string(),
       name: v.string(),
@@ -106,7 +106,7 @@ const schema = defineSchema(
     }).index("by_user", ["userId"])
       .index("by_name", ["name"]),
 
-    // Thesis Navigator: chat messages with source citations
+    // chat messages with source citations
     messages: defineTable({
       conversationId: v.id("conversations"),
       role: v.union(v.literal("user"), v.literal("assistant")),

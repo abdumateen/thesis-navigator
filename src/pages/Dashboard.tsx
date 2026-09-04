@@ -108,9 +108,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
       <aside className="flex w-72 flex-col border-r border-border bg-card">
-        {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="flex size-7 items-center justify-center rounded-md bg-primary">
@@ -131,7 +129,6 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Tab switcher */}
         <div className="flex gap-1 px-3 pt-3">
           <Button
             variant={tab === "library" ? "default" : "ghost"}
@@ -153,7 +150,6 @@ export default function Dashboard() {
 
         {tab === "chat" && (
           <>
-            {/* New chat button */}
             <div className="px-3 pt-3">
               <Button
                 variant="outline"
@@ -165,7 +161,6 @@ export default function Dashboard() {
               </Button>
             </div>
 
-            {/* Conversations */}
             <div className="mt-2 px-1">
               <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 Conversations
@@ -213,7 +208,6 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* Document selector (for chat mode) */}
         {tab === "chat" && (
           <div className="flex-1 overflow-hidden flex flex-col px-3 pb-3">
             <div className="flex items-center justify-between py-1">
@@ -286,14 +280,12 @@ export default function Dashboard() {
               </div>
             </ScrollArea>
 
-            {/* Upload area */}
             <div className="mt-3">
               <PdfUploader />
             </div>
           </div>
         )}
 
-        {/* Library mode: show upload + graph link in sidebar */}
         {tab === "library" && (
           <div className="flex-1 overflow-hidden flex flex-col px-3 pb-3 pt-2">
             <ScrollArea className="flex-1 -mx-1 mb-3">
@@ -337,9 +329,7 @@ export default function Dashboard() {
         )}
       </aside>
 
-      {/* Main area */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="flex items-center justify-between border-b border-border px-6 py-2.5 bg-card/50">
           <div className="flex items-center gap-3">
             <h1 className="text-sm font-medium text-foreground">
@@ -364,7 +354,6 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Content */}
         {tab === "library" ? (
           <LibraryGrid />
         ) : (

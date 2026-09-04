@@ -60,7 +60,6 @@ export function LibraryGrid() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Toolbar */}
       <div className="flex items-center gap-3 border-b border-border px-6 py-3 bg-card/50">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -101,7 +100,6 @@ export function LibraryGrid() {
         )}
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         {docs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">

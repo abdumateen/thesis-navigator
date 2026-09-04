@@ -335,7 +335,6 @@ export default function GraphExplorer() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
       <aside className="flex w-80 flex-col border-r border-border bg-card">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button
@@ -456,7 +455,6 @@ export default function GraphExplorer() {
         </div>
       </aside>
 
-      {/* Main graph area */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center justify-between border-b border-border px-6 py-2.5 bg-card/50">
           <h1 className="text-sm font-medium text-foreground">

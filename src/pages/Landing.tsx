@@ -50,7 +50,6 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
@@ -75,7 +74,6 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="flex min-h-screen items-center justify-center px-6 pt-14">
         <div className="mx-auto max-w-3xl text-center">
           <motion.div
@@ -115,7 +113,6 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* Decorative line */}
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
@@ -129,7 +126,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="px-6 pb-28">
         <div className="mx-auto max-w-5xl">
           <motion.p
@@ -164,7 +160,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Detail: what makes it different */}
       <section className="border-t border-border px-6 py-24">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-12 sm:grid-cols-2 sm:items-center">
@@ -229,7 +224,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="border-t border-border px-6 py-28">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -257,7 +251,6 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-border px-6 py-8">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-2">

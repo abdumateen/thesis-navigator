@@ -68,14 +68,14 @@ export const processDocumentReferences = action({
       throw new Error("OpenAI API key not configured.");
     }
 
-    // Step 1: Extract reference strings using LLM
+    // pull the reference strings out of the text with the LLM
     const referenceTitles = await extractReferenceStrings(args.fullText);
 
     if (referenceTitles.length === 0) {
       return { papers: [], links: [] };
     }
 
-    // Step 2: Look up each reference in OpenAlex
+    // resolve each reference against OpenAlex for metadata
     const papers: Array<{
       title: string;
       authors: string;

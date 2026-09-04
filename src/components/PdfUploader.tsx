@@ -97,7 +97,6 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
           const title = file.name.replace(/\.pdf$/i, "");
           setProgress(`Extracting text from "${title}"...`);
 
-          // Step 1: Extract text
           const text = await extractPdfText(file);
           if (!text.trim()) {
             toast.warning(
@@ -108,7 +107,7 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
 
           const textChunks = chunkText(text);
 
-          // Step 2: Render pages as images for visual extraction
+          // render every page so the vision pass can see tables and figures
           setProgress(`Analyzing pages in "${title}"...`);
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer })
@@ -123,7 +122,7 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
             pageImages.push({ pageNumber: i, base64 });
           }
 
-          // Step 3: Extract tables and figures using vision
+          // pull tables and figures out of the rendered pages
           let visualChunks: Array<{
             pageNumber: number;
             chunkType: "table" | "figure";
@@ -147,7 +146,6 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
             }
           }
 
-          // Step 4: Combine all chunks and save
           setProgress(`Saving "${title}"...`);
 
           const allChunks: Array<{

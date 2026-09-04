@@ -16,7 +16,6 @@ import {
   Image,
   Sparkles,
   Loader2,
-  Lightbulb,
   Target,
   HelpCircle,
 } from "lucide-react";
@@ -124,7 +123,6 @@ function NoveltyPanel({ documentId }: { documentId: string }) {
   return (
     <ScrollArea className="h-full">
       <div className="max-w-3xl mx-auto px-8 py-8 space-y-8">
-        {/* Summary */}
         <div>
           <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Summary
@@ -136,7 +134,6 @@ function NoveltyPanel({ documentId }: { documentId: string }) {
 
         <Separator />
 
-        {/* Novel Contributions */}
         <div>
           <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Novel Contributions
@@ -169,7 +166,6 @@ function NoveltyPanel({ documentId }: { documentId: string }) {
 
         <Separator />
 
-        {/* Methodology */}
         <div>
           <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Methodology
@@ -217,7 +213,6 @@ function NoveltyPanel({ documentId }: { documentId: string }) {
 
         <Separator />
 
-        {/* Position in Field */}
         <div>
           <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Position in Field
@@ -277,7 +272,6 @@ function NoveltyPanel({ documentId }: { documentId: string }) {
           </div>
         </div>
 
-        {/* Re-analyze button */}
         <div className="pt-4 pb-8">
           <Button
             variant="outline"
@@ -335,7 +329,6 @@ export default function DocumentDetail() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar: Document info */}
       <aside className="flex w-80 flex-col border-r border-border bg-card">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button
@@ -477,7 +470,6 @@ export default function DocumentDetail() {
         )}
       </aside>
 
-      {/* Main area */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center gap-3 border-b border-border px-6 py-2.5 bg-card/50">
           {detailTab === "chat" ? (

@@ -10,7 +10,6 @@ import {
   FileText,
   Loader2,
   Search,
-  Lightbulb,
   AlertTriangle,
   Wrench,
   Rocket,
@@ -84,7 +83,6 @@ export default function GapAnalysis() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
       <aside className="flex w-80 flex-col border-r border-border bg-card">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <Button
@@ -138,7 +136,6 @@ export default function GapAnalysis() {
 
         <Separator />
 
-        {/* Paper list */}
         <div className="flex-1 overflow-hidden flex flex-col px-3 pb-3 pt-2">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground py-1 px-1">
             Included papers
@@ -166,7 +163,6 @@ export default function GapAnalysis() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center justify-between border-b border-border px-6 py-2.5 bg-card/50">
           <h1 className="text-sm font-medium text-foreground">
@@ -229,7 +225,6 @@ export default function GapAnalysis() {
             </div>
           ) : (
             <div className="max-w-3xl mx-auto px-8 py-8 space-y-8">
-              {/* Landscape overview */}
               <div className="rounded-xl border border-border bg-card p-6">
                 <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
                   Research Landscape
@@ -239,7 +234,6 @@ export default function GapAnalysis() {
                 </p>
               </div>
 
-              {/* Research Gaps */}
               {result.gaps.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -301,7 +295,6 @@ export default function GapAnalysis() {
 
               <Separator />
 
-              {/* Contested Areas */}
               {result.contestedAreas.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -342,7 +335,6 @@ export default function GapAnalysis() {
 
               <Separator />
 
-              {/* Methodology Gaps */}
               {result.methodologyGaps.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -371,7 +363,6 @@ export default function GapAnalysis() {
 
               <Separator />
 
-              {/* Future Directions */}
               {result.futureDirections.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -416,7 +407,6 @@ export default function GapAnalysis() {
                 </div>
               )}
 
-              {/* Re-analyze */}
               <div className="pt-4 pb-12">
                 <Button
                   variant="outline"
