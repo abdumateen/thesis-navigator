@@ -8,10 +8,6 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-/**
- * Takes page images (base64) and uses GPT-4o-mini Vision to extract
- * tables and figures with detailed descriptions.
- */
 export const extractVisualContent = action({
   args: {
     pageImages: v.array(
@@ -36,7 +32,6 @@ export const extractVisualContent = action({
       imageUrl: string;
     }> = [];
 
-    // Process pages in batches of 5 to manage API costs
     const BATCH_SIZE = 5;
     for (let i = 0; i < args.pageImages.length; i += BATCH_SIZE) {
       const batch = args.pageImages.slice(i, i + BATCH_SIZE);
@@ -109,7 +104,6 @@ Otherwise, for each table or figure found, respond in this exact format:
             imageUrl: string;
           }> = [];
 
-          // Parse tables
           const tableRegex =
             /---TABLE---\n([\s\S]*?)---END---/g;
           let match;
@@ -122,7 +116,6 @@ Otherwise, for each table or figure found, respond in this exact format:
             });
           }
 
-          // Parse figures
           const figureRegex =
             /---FIGURE---\n([\s\S]*?)---END---/g;
           while ((match = figureRegex.exec(content)) !== null) {

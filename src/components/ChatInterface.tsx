@@ -148,7 +148,6 @@ export function ChatInterface({
     conversationId ? { conversationId } : "skip",
   ) as Message[] | undefined;
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -169,7 +168,6 @@ export function ChatInterface({
       setIsAsking(true);
 
       try {
-        // Create conversation if needed
         let convId = conversationId;
         if (!convId) {
           convId = await createConversation({
@@ -178,20 +176,17 @@ export function ChatInterface({
           onConversationCreated?.(convId);
         }
 
-        // Add user message
         await addMessage({
           conversationId: convId,
           role: "user",
           content: question,
         });
 
-        // Ask the AI
         const result = await askQuestion({
           question,
           documentIds: selectedDocumentIds,
         });
 
-        // Add assistant message with sources
         await addMessage({
           conversationId: convId,
           role: "assistant",

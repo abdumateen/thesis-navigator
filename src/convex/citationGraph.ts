@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-/** Save a fetched paper and return its ID. */
 export const savePaper = mutation({
   args: {
     title: v.string(),
@@ -17,7 +16,6 @@ export const savePaper = mutation({
     const userId = (await ctx.auth.getUserIdentity())?.subject;
     if (!userId) throw new Error("Not authenticated");
 
-    // Check if paper already exists
     if (args.openAlexId) {
       const existing = await ctx.db
         .query("papers")
@@ -36,7 +34,6 @@ export const savePaper = mutation({
   },
 });
 
-/** Create a citation link between two papers. */
 export const saveLink = mutation({
   args: {
     sourcePaperId: v.id("papers"),
@@ -59,7 +56,6 @@ export const saveLink = mutation({
   },
 });
 
-/** Save extracted entities for a document. */
 export const saveEntities = mutation({
   args: {
     documentId: v.id("documents"),
@@ -80,14 +76,12 @@ export const saveEntities = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     for (const entity of args.entities) {
-      // Check if entity already exists
       const existing = await ctx.db
         .query("entities")
         .withIndex("by_name", (q) => q.eq("name", entity.name))
         .first();
 
       if (existing) {
-        // Add this document to the entity's document list if not already there
         if (!existing.documentIds.includes(args.documentId)) {
           await ctx.db.patch(existing._id, {
             documentIds: [...existing.documentIds, args.documentId],
@@ -106,7 +100,6 @@ export const saveEntities = mutation({
   },
 });
 
-/** Get all papers for the current user. */
 export const getPapers = query({
   args: {},
   handler: async (ctx) => {
@@ -119,7 +112,6 @@ export const getPapers = query({
   },
 });
 
-/** Get all citation links for the current user. */
 export const getLinks = query({
   args: {},
   handler: async (ctx) => {
@@ -132,7 +124,6 @@ export const getLinks = query({
   },
 });
 
-/** Get all entities for the current user. */
 export const getEntities = query({
   args: {},
   handler: async (ctx) => {
@@ -145,7 +136,6 @@ export const getEntities = query({
   },
 });
 
-/** Delete a paper and all its links. */
 export const deletePaper = mutation({
   args: { paperId: v.id("papers") },
   handler: async (ctx, args) => {
@@ -155,7 +145,6 @@ export const deletePaper = mutation({
     const paper = await ctx.db.get(args.paperId);
     if (!paper || paper.userId !== userId) throw new Error("Not found");
 
-    // Delete all links involving this paper
     const links = await ctx.db
       .query("paperLinks")
       .withIndex("by_user", (q) => q.eq("userId", userId))

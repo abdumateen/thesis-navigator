@@ -9,14 +9,10 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-/** Extract reference strings from paper text using GPT-4o-mini. */
 async function extractReferenceStrings(fullText: string): Promise<string[]> {
   const openai = getOpenAI();
 
-  // Only send the last 20% of the paper where references usually are
-  const refSection = fullText.slice(
-    Math.floor(fullText.length * 0.7),
-  );
+  const refSection = fullText.slice(Math.floor(fullText.length * 0.7));
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -40,7 +36,6 @@ Do not include any text before or after the JSON array.`,
 
   const content = response.choices[0]?.message?.content ?? "[]";
 
-  // Parse JSON from the response, handling markdown code blocks
   const jsonMatch = content.match(/\[[\s\S]*\]/);
   if (!jsonMatch) return [];
 
@@ -54,10 +49,6 @@ Do not include any text before or after the JSON array.`,
   }
 }
 
-/**
- * Extract references from a document and fetch their metadata from OpenAlex.
- * Returns the papers found and any citation links.
- */
 export const processDocumentReferences = action({
   args: {
     documentId: v.id("documents"),
@@ -68,14 +59,12 @@ export const processDocumentReferences = action({
       throw new Error("OpenAI API key not configured.");
     }
 
-    // pull the reference strings out of the text with the LLM
     const referenceTitles = await extractReferenceStrings(args.fullText);
 
     if (referenceTitles.length === 0) {
       return { papers: [], links: [] };
     }
 
-    // resolve each reference against OpenAlex for metadata
     const papers: Array<{
       title: string;
       authors: string;
@@ -86,14 +75,12 @@ export const processDocumentReferences = action({
       doi: string | null;
     }> = [];
 
-    // Batch lookups - search by title
     for (const title of referenceTitles) {
       try {
         const metadata = await searchByTitle(title);
         if (metadata) {
           papers.push(metadata);
         }
-        // Small delay to be respectful to OpenAlex API
         await new Promise((r) => setTimeout(r, 100));
       } catch (err) {
         console.error(`Failed to look up "${title}":`, err);
@@ -101,8 +88,8 @@ export const processDocumentReferences = action({
     }
 
     return {
-      papers: papers.slice(0, 20), // Limit to top 20
-      links: [], // Links will be created after papers are saved
+      papers: papers.slice(0, 20),
+      links: [],
     };
   },
 });

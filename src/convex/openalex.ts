@@ -1,11 +1,5 @@
 "use node";
 
-/**
- * OpenAlex API client for fetching paper metadata.
- * No API key required for reasonable usage.
- * Polite pool: include mailto in requests for faster responses.
- */
-
 const BASE_URL = "https://api.openalex.org";
 const MAILTO = "thesis-navigator@freebuff.com";
 
@@ -36,7 +30,6 @@ export interface PaperMetadata {
   doi: string | null;
 }
 
-/** Reconstruct abstract from OpenAlex inverted index format. */
 function reconstructAbstract(
   invertedIndex: Record<string, number[]> | null,
 ): string {
@@ -51,7 +44,6 @@ function reconstructAbstract(
   return wordPositions.map(([, word]) => word).join(" ");
 }
 
-/** Search for a paper by title and return metadata. */
 export async function searchByTitle(
   title: string,
 ): Promise<PaperMetadata | null> {
@@ -79,7 +71,6 @@ export async function searchByTitle(
   };
 }
 
-/** Fetch a paper by OpenAlex ID. */
 export async function getById(
   openAlexId: string,
 ): Promise<PaperMetadata | null> {
@@ -106,7 +97,6 @@ export async function getById(
   };
 }
 
-/** Fetch multiple papers by their OpenAlex IDs. */
 export async function getByIds(
   ids: string[],
 ): Promise<PaperMetadata[]> {

@@ -11,16 +11,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
-
-/**
- * Wraps a route that requires a signed-in user.
- *
- * Signed-out visitors used to be bounced straight to `/auth`, which left them
- * on a bare sign-in form with no idea which page they had asked for or why they
- * were moved. The block is now stated on the page they landed on, and sign-in
- * still returns them to it via `returnTo`. Pass `redirectImmediately` for a
- * route where the bounce really is the better experience.
- */
 export function RequireAuth({
   children,
   title = "Sign in to continue",
@@ -28,11 +18,8 @@ export function RequireAuth({
   redirectImmediately = false,
 }: {
   children: ReactNode;
-  /** Headline on the blocked screen. */
   title?: string;
-  /** Says what the visitor gets by signing in. */
   description?: string;
-  /** Skip the explanation and go straight to `/auth`. */
   redirectImmediately?: boolean;
 }) {
   const { isLoading, isAuthenticated } = useAuth();

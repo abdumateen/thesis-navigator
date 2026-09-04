@@ -8,7 +8,6 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-/** Analyze a single paper and identify its novel contributions. */
 export const analyzeNovelty = action({
   args: {
     fullText: v.string(),
@@ -21,7 +20,6 @@ export const analyzeNovelty = action({
 
     const openai = getOpenAI();
 
-    // Send abstract + intro + conclusion (where novelty is usually stated)
     const intro = args.fullText.slice(0, Math.floor(args.fullText.length * 0.25));
     const conclusion = args.fullText.slice(Math.floor(args.fullText.length * 0.8));
     const sample = `${intro}\n\n${conclusion}`.slice(0, 10000);
@@ -94,7 +92,6 @@ Rules:
   },
 });
 
-/** Analyze a collection of papers and identify research gaps. */
 export const analyzeGaps = action({
   args: {
     papers: v.array(
@@ -115,14 +112,12 @@ export const analyzeGaps = action({
 
     const openai = getOpenAI();
 
-    // Build a concise overview of each paper (title + first 15% + last 10%)
     const paperSummaries = args.papers.map((paper) => {
       const intro = paper.fullText.slice(0, Math.floor(paper.fullText.length * 0.15));
       const conclusion = paper.fullText.slice(Math.floor(paper.fullText.length * 0.85));
       return `### ${paper.title}\n${intro}\n\n${conclusion}`.slice(0, 3000);
     });
 
-    // Limit total context to avoid token limits
     const totalContext = paperSummaries.join("\n\n---\n\n").slice(0, 25000);
 
     const response = await openai.chat.completions.create({

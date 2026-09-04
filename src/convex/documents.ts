@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-/** List all documents for the current user. */
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -15,8 +14,6 @@ export const list = query({
   },
 });
 
-/** Create a new document and its text chunks. Called from the frontend after
- *  PDF text extraction with pdf.js. */
 export const create = mutation({
   args: {
     title: v.string(),
@@ -46,7 +43,6 @@ export const create = mutation({
       createdAt: Date.now(),
     });
 
-    // Insert chunks
     for (let i = 0; i < args.chunks.length; i++) {
       const chunk = args.chunks[i];
       await ctx.db.insert("chunks", {
@@ -64,7 +60,6 @@ export const create = mutation({
   },
 });
 
-/** Delete a document and all its chunks. */
 export const remove = mutation({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
@@ -74,7 +69,6 @@ export const remove = mutation({
     const doc = await ctx.db.get(args.documentId);
     if (!doc || doc.userId !== userId) throw new Error("Not found");
 
-    // Delete all chunks for this document
     const chunks = await ctx.db
       .query("chunks")
       .withIndex("by_document", (q) => q.eq("documentId", args.documentId))
@@ -88,8 +82,6 @@ export const remove = mutation({
   },
 });
 
-/** Get all chunks for a set of document IDs. Used by askQuestion to gather
- *  context for the LLM. */
 export const getChunks = query({
   args: { documentIds: v.array(v.id("documents")) },
   handler: async (ctx, args) => {

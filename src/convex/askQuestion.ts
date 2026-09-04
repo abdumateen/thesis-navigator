@@ -10,10 +10,6 @@ function getOpenAI() {
   });
 }
 
-/**
- * Simple TF-IDF-like keyword scoring to find the most relevant chunks.
- * Returns the top N chunks ranked by relevance to the query.
- */
 function findRelevantChunks(
   query: string,
   allChunks: Array<{
@@ -66,7 +62,6 @@ function findRelevantChunks(
           score += matches.length;
         }
       }
-      // Boost tables and figures slightly since they often contain key data
       if (chunk.chunkType === "table") score *= 1.3;
       if (chunk.chunkType === "figure") score *= 1.2;
       if (score > 0) {
@@ -88,8 +83,6 @@ function findRelevantChunks(
   return scored.slice(0, topK);
 }
 
-/** Ask a question about the uploaded documents. Uses simple keyword retrieval
- *  to find relevant chunks, then sends them to OpenAI GPT-4o for a cited answer. */
 export const ask = action({
   args: {
     question: v.string(),
@@ -102,7 +95,6 @@ export const ask = action({
       );
     }
 
-    // Fetch all chunks for the selected documents
     const { api } = await import("./_generated/api.js");
     const allChunks = await ctx.runQuery(api.documents.getChunks, {
       documentIds: args.documentIds,
@@ -116,7 +108,6 @@ export const ask = action({
       };
     }
 
-    // Find the most relevant chunks using keyword scoring
     const relevantChunks = findRelevantChunks(args.question, allChunks, 8);
 
     if (relevantChunks.length === 0) {
@@ -127,7 +118,6 @@ export const ask = action({
       };
     }
 
-    // Build context for the LLM
     const contextParts = relevantChunks.map((chunk, i) => {
       const typeLabel = chunk.chunkType === "table"
         ? "[TABLE]"
@@ -178,7 +168,6 @@ ${context}
 
     const answer = response.choices[0]?.message?.content ?? "No response generated.";
 
-    // Build source references
     const sources = relevantChunks.map((chunk) => ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       documentId: chunk.documentId as any,

@@ -8,7 +8,6 @@ function getOpenAI() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-/** Extract key research entities from paper text using GPT-4o-mini. */
 export const extractEntities = action({
   args: {
     fullText: v.string(),
@@ -20,7 +19,6 @@ export const extractEntities = action({
 
     const openai = getOpenAI();
 
-    // Send first 30% (abstract + intro) and middle 30% (methods + results)
     const intro = args.fullText.slice(0, Math.floor(args.fullText.length * 0.3));
     const methods = args.fullText.slice(
       Math.floor(args.fullText.length * 0.3),

@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-/** List all conversations for the current user. */
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -15,7 +14,6 @@ export const list = query({
   },
 });
 
-/** Create a new conversation. */
 export const create = mutation({
   args: { title: v.string() },
   handler: async (ctx, args) => {
@@ -30,7 +28,6 @@ export const create = mutation({
   },
 });
 
-/** Delete a conversation and all its messages. */
 export const remove = mutation({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -55,7 +52,6 @@ export const remove = mutation({
   },
 });
 
-/** Get all messages for a conversation. */
 export const getMessages = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -69,7 +65,6 @@ export const getMessages = query({
   },
 });
 
-/** Add a message to a conversation. */
 export const addMessage = mutation({
   args: {
     conversationId: v.id("conversations"),

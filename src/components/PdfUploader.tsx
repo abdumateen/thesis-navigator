@@ -5,13 +5,11 @@ import { Upload, FileText, Loader2, Image } from "lucide-react";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 
-// Configure pdf.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url,
 ).toString();
 
-/** Split text into overlapping chunks for better retrieval. */
 function chunkText(text: string, chunkSize = 1200, overlap = 200): string[] {
   const chunks: string[] = [];
   let start = 0;
@@ -24,7 +22,6 @@ function chunkText(text: string, chunkSize = 1200, overlap = 200): string[] {
   return chunks.filter((c) => c.length > 50);
 }
 
-/** Extract text from a PDF file using pdf.js. */
 async function extractPdfText(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -42,7 +39,6 @@ async function extractPdfText(file: File): Promise<string> {
   return textParts.join("\n\n");
 }
 
-/** Render a PDF page to a base64-encoded PNG image. */
 async function renderPageToBase64(
   file: File,
   pageNumber: number,
@@ -107,7 +103,6 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
 
           const textChunks = chunkText(text);
 
-          // render every page so the vision pass can see tables and figures
           setProgress(`Analyzing pages in "${title}"...`);
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer })
@@ -122,7 +117,6 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
             pageImages.push({ pageNumber: i, base64 });
           }
 
-          // pull tables and figures out of the rendered pages
           let visualChunks: Array<{
             pageNumber: number;
             chunkType: "table" | "figure";
