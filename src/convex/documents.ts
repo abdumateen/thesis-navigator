@@ -85,6 +85,9 @@ export const remove = mutation({
 export const getChunks = query({
   args: { documentIds: v.array(v.id("documents")) },
   handler: async (ctx, args) => {
+    const userId = (await ctx.auth.getUserIdentity())?.subject;
+    if (!userId) return [];
+
     const results: Array<{
       documentId: string;
       documentTitle: string;
@@ -100,7 +103,7 @@ export const getChunks = query({
 
     for (const docId of args.documentIds) {
       const doc = await ctx.db.get(docId);
-      if (!doc) continue;
+      if (!doc || doc.userId !== userId) continue;
       const chunks = await ctx.db
         .query("chunks")
         .withIndex("by_document", (q) => q.eq("documentId", docId))

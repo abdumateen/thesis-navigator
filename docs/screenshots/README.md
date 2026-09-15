@@ -17,7 +17,7 @@ Expected files:
 
 The images currently referenced by the README are **illustrative placeholders, not captures of the running app** — they should be replaced with real screenshots.
 
-1. Run the app locally (`npx convex dev` + `bun dev`, see the [README](../../README.md#development)).
+1. Run the app locally (`npx convex dev` + `bun dev`, see the [README](../../README.md#local-development)).
 2. Sign in, upload a couple of open-access papers, and let the graph processing finish.
 3. Capture each screen at a consistent size (2× scale, ≥ 1440 px wide works well on GitHub) with your OS screenshot tool or a browser extension like GoFullPage.
 4. Optionally frame them consistently (e.g. [shots.so](https://shots.so) or a plain browser-window crop) — keep it subtle; the UI should speak for itself.

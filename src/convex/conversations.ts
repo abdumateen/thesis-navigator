@@ -55,6 +55,12 @@ export const remove = mutation({
 export const getMessages = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
+    const userId = (await ctx.auth.getUserIdentity())?.subject;
+    if (!userId) return [];
+
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv || conv.userId !== userId) return [];
+
     return await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
@@ -82,6 +88,12 @@ export const addMessage = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const userId = (await ctx.auth.getUserIdentity())?.subject;
+    if (!userId) throw new Error("Not authenticated");
+
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv || conv.userId !== userId) throw new Error("Not found");
+
     return await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       role: args.role,

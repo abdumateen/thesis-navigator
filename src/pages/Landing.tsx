@@ -277,8 +277,9 @@ export default function Landing() {
               Your literature review starts here.
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Upload your papers, ask your questions, and map the landscape
-              around your thesis topic.
+              Create an account to upload papers and build your private
+              research workspace — your library, questions, and analysis are
+              associated with your account and are not visible to other users.
             </p>
             <Button
               size="lg"

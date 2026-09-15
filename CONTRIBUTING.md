@@ -15,7 +15,7 @@ npx convex dev               # terminal 1: creates/links a project, generates co
 bun dev                      # terminal 2: starts Vite
 ```
 
-Backend environment variables (`OPENAI_API_KEY`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `EMAIL_API_KEY`, `EMAIL_API_URL`) are set on the Convex deployment with `npx convex env set KEY value` — never committed. Most UI and retrieval work needs no keys at all; only Q&A, vision extraction, and the analysis features require `OPENAI_API_KEY`.
+Backend environment variables (`SITE_URL`, `OPENAI_API_KEY`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `EMAIL_API_URL`, `EMAIL_API_KEY`) are set on the Convex deployment with `npx convex env set KEY value` — never committed. Most UI and retrieval work needs no keys at all; only Q&A, vision extraction, and the analysis features require `OPENAI_API_KEY`, and only sign-in flows need the auth variables.
 
 ## Branch strategy
 

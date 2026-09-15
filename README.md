@@ -249,40 +249,19 @@ bun install
 
 ### Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in the frontend variable, then set the backend variables on your Convex deployment.
+See [Environment Variables](#environment-variables) below for the definitive list, and continue with [Local Development](#local-development).
 
-**Frontend (Vite) — in `.env.local`:**
+## Local Development
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `VITE_CONVEX_URL` | ✅ | URL of your Convex deployment (printed by `npx convex dev`) |
+Convex must be running because the app has no server of its own: the frontend talks directly to your Convex deployment, and `npx convex dev` also generates `src/convex/_generated/` — the typed client the frontend imports as `@/convex/_generated/api`. On a fresh clone, skipping this step fails with `Failed to resolve import "@/convex/_generated/api"`.
 
-**Backend (Convex) — set via `npx convex env set KEY value` or the [dashboard](https://dashboard.convex.dev):**
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | ✅ | Q&A answers (`gpt-4o`), table/figure vision extraction, entity and gap analysis |
-| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | for Google sign-in | Google OAuth client credentials |
-| `EMAIL_API_KEY` / `EMAIL_API_URL` | for email sign-in | Transactional email endpoint for OTP codes |
-
-Notes:
-
-- Never commit real keys. `.env*` files are gitignored.
-- Without `OPENAI_API_KEY`, uploads still work in text-only mode, but Q&A, graph processing, and gap analysis will return errors.
-- Google OAuth requires an authorized redirect URI of `<your Convex site URL>/api/auth/callback/google`.
-- Email OTP requires an endpoint that accepts a JSON body `{ to, subject, text, html }` with `Authorization: Bearer <EMAIL_API_KEY>` (e.g. Resend, Postmark, or a small wrapper around SMTP).
-
-## Development
-
-Convex code must be generated and a deployment must exist before the app will build — the frontend imports `@/convex/_generated/api`. Run the two processes in separate terminals:
-
-**Terminal 1 — Convex (generates `_generated/`, syncs functions, streams logs):**
+**Terminal 1 — Convex (generates `_generated/`, pushes functions, streams logs):**
 
 ```bash
 npx convex dev
 ```
 
-The first run asks you to create or log into a Convex project and prints your deployment URL — put it in `.env.local` as `VITE_CONVEX_URL`.
+The first run asks you to create or log into a Convex project and prints your deployment URLs. Put the `*.convex.cloud` URL in `.env.local` as `VITE_CONVEX_URL`, and set `SITE_URL` on the deployment (see [Environment Variables](#environment-variables)).
 
 **Terminal 2 — Vite dev server:**
 
@@ -299,6 +278,117 @@ Useful commands:
 | `bun run build` | Typecheck + production build |
 | `bun run lint` | ESLint |
 | `bunx convex dev --once` | One-shot function push + codegen |
+| `npx convex env set KEY value` | Set a backend environment variable |
+
+## Authentication
+
+Thesis Navigator is a multi-user app: every uploaded paper, question, and analysis belongs to the account that created it, and the backend refuses to return another user's data. The landing page (`/`) is public; everything under `/dashboard`, `/document`, `/graph`, and `/gaps` requires signing in.
+
+Two sign-in methods, both handled by [Convex Auth](https://docs.convex.dev/auth) — there is no guest mode:
+
+- **Google OAuth** — one-click sign-in with a Google account. Requires creating your own OAuth client ([setup](#google-oauth-setup)).
+- **Email OTP** — enter an email address, receive a 6-digit code (valid for 15 minutes), sign in. Requires a transactional email endpoint ([setup](#email-otp-setup)).
+
+Each developer who deploys Thesis Navigator configures their **own** credentials — nothing in the repository is tied to anyone's accounts:
+
+| Person | What they configure |
+| --- | --- |
+| Developer cloning this repo | Own Convex project, Google OAuth client, email endpoint, OpenAI key |
+| End user of your deployment | Nothing — they just sign in with Google or email |
+
+## Google OAuth Setup
+
+The "Continue with Google" button needs OAuth client credentials from your own Google Cloud project:
+
+```text
+Google Cloud Console (console.cloud.google.com)
+    ↓
+Create or select a project
+    ↓
+OAuth consent screen → External → app name + support email
+    ↓
+Credentials → Create credentials → OAuth client ID
+    ↓
+Application type: Web application
+    ↓
+Authorized JavaScript origins:
+    http://localhost:5173                  (local development)
+    https://your-production-domain         (when deployed)
+    ↓
+Authorized redirect URIs:
+    https://<your-deployment>.convex.site/api/auth/callback/google
+    ↓
+Copy the Client ID and Client Secret
+    ↓
+npx convex env set AUTH_GOOGLE_ID <client-id>
+npx convex env set AUTH_GOOGLE_SECRET <client-secret>
+    ↓
+Restart npx convex dev and sign in
+```
+
+The redirect URI uses your deployment's **Convex site URL** — the `*.convex.site` address (not `*.convex.cloud`, not the Vite dev server). That is the address where Convex Auth receives Google's callback at `/api/auth/callback/google`. You can find it in the Convex dashboard next to the cloud URL.
+
+Common errors:
+
+- **401 `invalid_client`** — the client ID or secret set on the deployment is wrong or missing.
+- **`redirect_uri_mismatch`** — the redirect URI registered in Google does not exactly match `<CONVEX_SITE_URL>/api/auth/callback/google`.
+
+## Email OTP Setup
+
+Email sign-in sends a 6-digit code through a transactional email endpoint that you configure. It is provider-agnostic: any HTTP endpoint meeting this contract works.
+
+```text
+POST <EMAIL_API_URL>
+Authorization: Bearer <EMAIL_API_KEY>
+Content-Type: application/json
+
+{
+  "to": "user@example.com",
+  "subject": "Your Thesis Navigator verification code",
+  "text": "Your verification code is 123456. It expires in 15 minutes.",
+  "html": "<p>Your verification code is <strong>123456</strong>.</p><p>It expires in 15 minutes.</p>"
+}
+```
+
+Any 2xx response is treated as success; other statuses abort sign-in with an error. Most transactional providers (Resend, Postmark, SendGrid, …) expose an HTTP send API — if yours has a different shape, a small serverless function can adapt it.
+
+Configure it on the deployment:
+
+```bash
+npx convex env set EMAIL_API_URL https://your-email-provider.example/send
+npx convex env set EMAIL_API_KEY your-secret-key
+```
+
+Until these are set, email sign-in fails with a clear configuration error; Google sign-in is unaffected.
+
+## Environment Variables
+
+| Variable | Required | Where used | Description |
+| --- | --- | --- | --- |
+| `VITE_CONVEX_URL` | ✅ | Vite frontend (`.env.local`) | Your deployment's `*.convex.cloud` URL — the browser talks to it directly |
+| `SITE_URL` | ✅ | Convex backend | Your frontend URL (e.g. `http://localhost:5173`) — where auth redirects users back after sign-in |
+| `CONVEX_SITE_URL` | auto | Convex backend | Set automatically by Convex (`*.convex.site`); base URL for OAuth callbacks. Do not set manually. |
+| `CUSTOM_AUTH_SITE_URL` | optional | Convex backend | Overrides the OAuth callback base when serving auth through a custom domain |
+| `OPENAI_API_KEY` | ✅ | Convex backend | OpenAI key — Q&A answers (`gpt-4o`), table/figure vision extraction, entity and gap analysis |
+| `AUTH_GOOGLE_ID` | for Google | Convex backend | Google OAuth client ID (read automatically by the Google provider) |
+| `AUTH_GOOGLE_SECRET` | for Google | Convex backend | Google OAuth client secret |
+| `EMAIL_API_URL` | for email | Convex backend | HTTP endpoint that sends OTP emails (contract above) |
+| `EMAIL_API_KEY` | for email | Convex backend | Bearer token for the email endpoint |
+
+Frontend variables are not secret — they are embedded in the browser bundle. Backend variables live only on the Convex deployment: set them with `npx convex env set KEY value` or the dashboard (Settings → Environment Variables), never in `.env.local`.
+
+Without `OPENAI_API_KEY`, uploads still work in text-only mode, but Q&A, graph processing, and gap analysis return configuration errors.
+
+## Deploying Your Own Instance
+
+1. Fork and clone the repository, then `bun install`.
+2. Run `npx convex dev` and create a new Convex project — this also generates the client API.
+3. Set backend variables on the deployment: `SITE_URL` (your frontend URL), `OPENAI_API_KEY`, `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, and `EMAIL_API_URL` / `EMAIL_API_KEY` as needed.
+4. Create your own Google OAuth client with the redirect URI from [Google OAuth Setup](#google-oauth-setup) and your frontend origin.
+5. Configure your email endpoint per [Email OTP Setup](#email-otp-setup).
+6. Run `bun dev` to develop locally, or `bun run build` and deploy `dist/` to any static host (with SPA fallback routing) pointed at your deployment.
+
+All credentials live in Convex environment variables and gitignored files — nothing secret is committed.
 
 ## Project Structure
 

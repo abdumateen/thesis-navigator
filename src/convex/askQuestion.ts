@@ -91,7 +91,8 @@ export const ask = action({
   handler: async (ctx, args) => {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error(
-        "OpenAI API key not configured. Please add OPENAI_API_KEY in your project's Keys/API keys settings.",
+        "OPENAI_API_KEY is not configured. Set it as an environment variable " +
+          "on your Convex deployment to enable answering questions.",
       );
     }
 

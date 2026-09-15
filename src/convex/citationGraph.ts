@@ -17,12 +17,13 @@ export const savePaper = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     if (args.openAlexId) {
-      const existing = await ctx.db
+      const candidates = await ctx.db
         .query("papers")
         .withIndex("by_openAlex", (q) =>
           q.eq("openAlexId", args.openAlexId),
         )
-        .first();
+        .collect();
+      const existing = candidates.find((p) => p.userId === userId);
       if (existing) return existing._id;
     }
 
@@ -47,6 +48,11 @@ export const saveLink = mutation({
   handler: async (ctx, args) => {
     const userId = (await ctx.auth.getUserIdentity())?.subject;
     if (!userId) throw new Error("Not authenticated");
+
+    for (const paperId of [args.sourcePaperId, args.targetPaperId]) {
+      const paper = await ctx.db.get(paperId);
+      if (!paper || paper.userId !== userId) throw new Error("Not found");
+    }
 
     return await ctx.db.insert("paperLinks", {
       userId,
@@ -76,10 +82,11 @@ export const saveEntities = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     for (const entity of args.entities) {
-      const existing = await ctx.db
+      const candidates = await ctx.db
         .query("entities")
         .withIndex("by_name", (q) => q.eq("name", entity.name))
-        .first();
+        .collect();
+      const existing = candidates.find((e) => e.userId === userId);
 
       if (existing) {
         if (!existing.documentIds.includes(args.documentId)) {

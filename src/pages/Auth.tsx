@@ -95,7 +95,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("google", { redirectTo: redirect });
     } catch (error) {
       console.error("Google sign-in error:", error);
-      setError("Failed to sign in with Google. Please try again.");
+      setError(
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to sign in with Google. Please try again.",
+      );
       setIsLoading(false);
     }
   };
@@ -121,7 +125,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </div>
                 <CardTitle className="text-xl">Welcome back</CardTitle>
                 <CardDescription>
-                  Sign in to access your research workspace
+                  Sign in to create your private research workspace
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
@@ -190,6 +194,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                 </CardContent>
               </form>
+              <CardFooter className="flex-col gap-1 pt-0 pb-5">
+                <p className="text-[11px] leading-relaxed text-muted-foreground text-center">
+                  Your papers and research data are associated with your
+                  account and are not visible to other users.
+                </p>
+              </CardFooter>
             </>
           ) : (
             <>
