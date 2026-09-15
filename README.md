@@ -8,18 +8,88 @@ Thesis Navigator answers questions about your papers with citations you can veri
 
 ---
 
-## Why Thesis Navigator?
+## Quick Start
 
-Academic literature is fragmented. The knowledge you need for a thesis is scattered across dozens of PDFs — buried in methods sections, locked inside figures and tables, and spread across competing findings that rarely get compared directly.
+No authentication, no OAuth, no email provider — one Convex deployment and one OpenAI key:
 
-Thesis Navigator turns a collection of papers into an interactive research workspace:
+```bash
+git clone https://github.com/abdumateen/thesis-navigator.git
+cd thesis-navigator
+bun install
+```
 
-| Without | With Thesis Navigator |
-| --- | --- |
-| Skim hundreds of pages to find one limitation | Ask *"What are the limitations of this study?"* and get a cited answer |
-| Manually transcribe tables and interpret figures | Tables and figures are extracted and searchable alongside text |
-| Trace citations by hand through reference lists | Interactive citation network resolved against OpenAlex |
-| Re-read three papers to find where methods disagree | Cross-paper analysis surfaces contested and missing evidence |
+Configure (see [Deployment Modes](#deployment-modes) for details):
+
+```bash
+cp .env.example .env.local        # frontend config; VITE_APP_MODE=local is the default
+npx convex dev                    # terminal 1 — creates your Convex project, prints the URL
+npx convex env set OPENAI_API_KEY sk-...   # backend config
+```
+
+Run:
+
+```bash
+bun dev                           # terminal 2
+```
+
+Open `http://localhost:5173`, click **Open Workspace**, and start uploading papers. No login step exists in local mode.
+
+> **Warning:** local mode is for a single user on their own machine or a private deployment. Do **not** expose a local-mode deployment as a public multi-user service — everything is shared in one workspace.
+
+## Deployment Modes
+
+Thesis Navigator has one research product with two deployment policies, selected by the `APP_MODE` (backend) and `VITE_APP_MODE` (frontend) environment variables. **Both default to `local` when unset.**
+
+```text
+                    APP_MODE
+                       |
+              +--------+--------+
+              |                 |
+            LOCAL             HOSTED
+              |                 |
+       No authentication    Authentication (Google OAuth)
+              |                 |
+       Single workspace     Per-user workspace isolation
+              |                 |
+              +--------+--------+
+                       |
+                    Convex
+                       |
+          +------------+-------------+
+          |            |             |
+       Documents    Research         AI
+          |            |             |
+         PDF        OpenAlex       OpenAI
+          |            |             |
+         Q&A       Citations      Analysis
+          |            |
+       Graph      Knowledge Graph
+          |
+    Research Gaps / Novelty
+```
+
+### Local / Self-Hosted
+
+The default and recommended way to run the project.
+
+- **Intended for** developers forking the project, and anyone self-hosting for personal use.
+- **Single user** — one shared workspace; no accounts, no sign-in screen, no redirects to a login page.
+- **No email infrastructure** — no SMTP, no OTP codes, no email provider of any kind.
+- **No OAuth configuration** — Google credentials are never needed.
+- Requires **your own Convex deployment** and **your own `OPENAI_API_KEY`**.
+- **Not for public multi-user hosting.** Anyone who can reach the app shares the same workspace.
+
+### Hosted / Multi-User
+
+For a public deployment where each visitor gets a private workspace.
+
+- **Intended for** public deployments serving many researchers.
+- **Authentication required** — users sign in with **Google OAuth** before reaching the workspace.
+- **Per-user workspace isolation** — every query and mutation is scoped to the signed-in user; one user can never read or modify another user's documents, conversations, or analysis.
+- Requires **Google OAuth credentials** and `SITE_URL` pointing at your frontend ([setup](#google-oauth-setup)).
+- No email provider is used in either mode.
+
+Switching modes is two variables: `APP_MODE=hosted` on the Convex deployment and `VITE_APP_MODE=hosted` in the frontend build. No code changes, no database migration.
 
 ## What It Does
 
@@ -29,7 +99,6 @@ Thesis Navigator turns a collection of papers into an interactive research works
 - **Knowledge graph** — methods, datasets, metrics, and concepts are extracted per paper and linked across your entire library, showing which papers share approaches or evaluate on the same benchmarks.
 - **Research gap analysis** — cross-library synthesis of what is missing, contested, or methodologically weak, with suggested research questions.
 - **Novelty assessment** — per-paper analysis of novel contributions, methodology strengths/limitations, and position in the field.
-- **Account-based access** — email code (OTP) and Google sign-in; no guest mode. Every user's library and history is private.
 
 ## How It Works
 
@@ -65,7 +134,7 @@ flowchart TB
 | --- | --- | --- |
 | Frontend | React 19 + Vite + TypeScript | Application UI |
 | Styling | Tailwind CSS v4 + shadcn/ui | Interface components and theming |
-| Backend | Convex | Backend functions, database, and authentication |
+| Backend | Convex | Backend functions, database, and authentication (hosted mode) |
 | LLM | OpenAI (`gpt-4o`, `gpt-4o-mini` vision) | Q&A, table/figure extraction, entity and gap analysis |
 | Metadata | OpenAlex | Academic paper metadata and citation counts |
 | PDF parsing | pdf.js (client-side) | Text extraction and page rasterization |
@@ -118,7 +187,7 @@ flowchart TD
     CMAP --> OUT["Evidence-backed answer<br/>with expandable source cards"]
 ```
 
-Retrieval is deliberately simple and **fully deterministic**: term-frequency scoring against the user's selected documents (with modest boosts for table and figure chunks). The LLM only ever sees the retrieved excerpts and is instructed to answer *only* from them — so every claim in an answer can be traced to a specific passage shown to the user.
+Retrieval is deliberately simple and **fully deterministic**: term-frequency scoring against the selected documents (with modest boosts for table and figure chunks). The LLM only ever sees the retrieved excerpts and is instructed to answer *only* from them — so every claim in an answer can be traced to a specific passage shown to the user.
 
 ## AI Research Pipeline
 
@@ -149,7 +218,7 @@ flowchart LR
     G --> H["Interactive graph<br/>(vis-network, force-directed)"]
 ```
 
-Your uploaded papers are the large anchor nodes; resolved references appear as smaller nodes sized by their citation count. Edges are directional (source → cited work). Hover any node for authors, year, and citation count.
+Your papers are the large anchor nodes; resolved references appear as smaller nodes sized by their citation count. Edges are directional (source → cited work). Hover any node for authors, year, and citation count.
 
 ## Knowledge Graph
 
@@ -230,26 +299,32 @@ Connect methods, datasets, metrics, and concepts across papers. Color-coded enti
 
 Identify unresolved questions, missing evaluations, conflicting findings, and promising future directions — synthesized from your collection with suggested research questions.
 
-## Getting Started
+## Environment Variables
 
-### Prerequisites
+### Required for local mode (the default)
 
-- **[Bun](https://bun.sh)** (v1.1+) — JavaScript runtime and package manager
-- **Git**
-- **Node.js 18+** — required by the Convex CLI (`npx convex`)
-- API keys — see [Environment Variables](#environment-variables)
+| Variable | Where used | Description |
+| --- | --- | --- |
+| `VITE_APP_MODE` | Vite frontend (`.env.local`) | `local` (default when unset) or `hosted` |
+| `VITE_CONVEX_URL` | Vite frontend (`.env.local`) | Your deployment's `*.convex.cloud` URL — the browser talks to it directly |
+| `APP_MODE` | Convex backend | `local` (default when unset) or `hosted` |
+| `OPENAI_API_KEY` | Convex backend | OpenAI key — Q&A answers (`gpt-4o`), table/figure vision extraction, entity and gap analysis |
 
-### Installation
+That is the complete local-mode configuration. No auth or email variables exist.
 
-```bash
-git clone https://github.com/abdumateen/thesis-navigator.git
-cd thesis-navigator
-bun install
-```
+### Additional variables for hosted mode only
 
-### Environment Variables
+| Variable | Where used | Description |
+| --- | --- | --- |
+| `AUTH_GOOGLE_ID` | Convex backend | Google OAuth client ID ([setup](#google-oauth-setup)) |
+| `AUTH_GOOGLE_SECRET` | Convex backend | Google OAuth client secret |
+| `SITE_URL` | Convex backend | Your frontend URL (e.g. `http://localhost:5173`) — where auth redirects users back after sign-in |
 
-See [Environment Variables](#environment-variables) below for the definitive list, and continue with [Local Development](#local-development).
+Convex sets `CONVEX_SITE_URL` automatically (your `*.convex.site` address); it is the base URL for OAuth callbacks and should not be set manually. `CUSTOM_AUTH_SITE_URL` can override it when serving auth through a custom domain.
+
+Frontend variables are not secret — they are embedded in the browser bundle. Backend variables live only on the Convex deployment: set them with `npx convex env set KEY value` or the dashboard (Settings → Environment Variables), never in `.env.local`.
+
+Without `OPENAI_API_KEY`, uploads still work in text-only mode, but Q&A, graph processing, and gap analysis return configuration errors.
 
 ## Local Development
 
@@ -261,7 +336,7 @@ Convex must be running because the app has no server of its own: the frontend ta
 npx convex dev
 ```
 
-The first run asks you to create or log into a Convex project and prints your deployment URLs. Put the `*.convex.cloud` URL in `.env.local` as `VITE_CONVEX_URL`, and set `SITE_URL` on the deployment (see [Environment Variables](#environment-variables)).
+The first run asks you to create or log into a Convex project and prints your deployment URLs. Put the `*.convex.cloud` URL in `.env.local` as `VITE_CONVEX_URL`.
 
 **Terminal 2 — Vite dev server:**
 
@@ -280,23 +355,9 @@ Useful commands:
 | `bunx convex dev --once` | One-shot function push + codegen |
 | `npx convex env set KEY value` | Set a backend environment variable |
 
-## Authentication
+## Google OAuth Setup (hosted mode only)
 
-Thesis Navigator is a multi-user app: every uploaded paper, question, and analysis belongs to the account that created it, and the backend refuses to return another user's data. The landing page (`/`) is public; everything under `/dashboard`, `/document`, `/graph`, and `/gaps` requires signing in.
-
-Two sign-in methods, both handled by [Convex Auth](https://docs.convex.dev/auth) — there is no guest mode:
-
-- **Google OAuth** — one-click sign-in with a Google account. Requires creating your own OAuth client ([setup](#google-oauth-setup)).
-- **Email OTP** — enter an email address, receive a 6-digit code (valid for 15 minutes), sign in. Requires a transactional email endpoint ([setup](#email-otp-setup)).
-
-Each developer who deploys Thesis Navigator configures their **own** credentials — nothing in the repository is tied to anyone's accounts:
-
-| Person | What they configure |
-| --- | --- |
-| Developer cloning this repo | Own Convex project, Google OAuth client, email endpoint, OpenAI key |
-| End user of your deployment | Nothing — they just sign in with Google or email |
-
-## Google OAuth Setup
+Local mode never touches Google — you can skip this section entirely unless `APP_MODE=hosted`.
 
 The "Continue with Google" button needs OAuth client credentials from your own Google Cloud project:
 
@@ -323,6 +384,8 @@ Copy the Client ID and Client Secret
 npx convex env set AUTH_GOOGLE_ID <client-id>
 npx convex env set AUTH_GOOGLE_SECRET <client-secret>
     ↓
+npx convex env set SITE_URL http://localhost:5173
+    ↓
 Restart npx convex dev and sign in
 ```
 
@@ -333,60 +396,22 @@ Common errors:
 - **401 `invalid_client`** — the client ID or secret set on the deployment is wrong or missing.
 - **`redirect_uri_mismatch`** — the redirect URI registered in Google does not exactly match `<CONVEX_SITE_URL>/api/auth/callback/google`.
 
-## Email OTP Setup
-
-Email sign-in sends a 6-digit code through a transactional email endpoint that you configure. It is provider-agnostic: any HTTP endpoint meeting this contract works.
-
-```text
-POST <EMAIL_API_URL>
-Authorization: Bearer <EMAIL_API_KEY>
-Content-Type: application/json
-
-{
-  "to": "user@example.com",
-  "subject": "Your Thesis Navigator verification code",
-  "text": "Your verification code is 123456. It expires in 15 minutes.",
-  "html": "<p>Your verification code is <strong>123456</strong>.</p><p>It expires in 15 minutes.</p>"
-}
-```
-
-Any 2xx response is treated as success; other statuses abort sign-in with an error. Most transactional providers (Resend, Postmark, SendGrid, …) expose an HTTP send API — if yours has a different shape, a small serverless function can adapt it.
-
-Configure it on the deployment:
-
-```bash
-npx convex env set EMAIL_API_URL https://your-email-provider.example/send
-npx convex env set EMAIL_API_KEY your-secret-key
-```
-
-Until these are set, email sign-in fails with a clear configuration error; Google sign-in is unaffected.
-
-## Environment Variables
-
-| Variable | Required | Where used | Description |
-| --- | --- | --- | --- |
-| `VITE_CONVEX_URL` | ✅ | Vite frontend (`.env.local`) | Your deployment's `*.convex.cloud` URL — the browser talks to it directly |
-| `SITE_URL` | ✅ | Convex backend | Your frontend URL (e.g. `http://localhost:5173`) — where auth redirects users back after sign-in |
-| `CONVEX_SITE_URL` | auto | Convex backend | Set automatically by Convex (`*.convex.site`); base URL for OAuth callbacks. Do not set manually. |
-| `CUSTOM_AUTH_SITE_URL` | optional | Convex backend | Overrides the OAuth callback base when serving auth through a custom domain |
-| `OPENAI_API_KEY` | ✅ | Convex backend | OpenAI key — Q&A answers (`gpt-4o`), table/figure vision extraction, entity and gap analysis |
-| `AUTH_GOOGLE_ID` | for Google | Convex backend | Google OAuth client ID (read automatically by the Google provider) |
-| `AUTH_GOOGLE_SECRET` | for Google | Convex backend | Google OAuth client secret |
-| `EMAIL_API_URL` | for email | Convex backend | HTTP endpoint that sends OTP emails (contract above) |
-| `EMAIL_API_KEY` | for email | Convex backend | Bearer token for the email endpoint |
-
-Frontend variables are not secret — they are embedded in the browser bundle. Backend variables live only on the Convex deployment: set them with `npx convex env set KEY value` or the dashboard (Settings → Environment Variables), never in `.env.local`.
-
-Without `OPENAI_API_KEY`, uploads still work in text-only mode, but Q&A, graph processing, and gap analysis return configuration errors.
-
 ## Deploying Your Own Instance
+
+**Local mode (personal):**
 
 1. Fork and clone the repository, then `bun install`.
 2. Run `npx convex dev` and create a new Convex project — this also generates the client API.
-3. Set backend variables on the deployment: `SITE_URL` (your frontend URL), `OPENAI_API_KEY`, `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, and `EMAIL_API_URL` / `EMAIL_API_KEY` as needed.
-4. Create your own Google OAuth client with the redirect URI from [Google OAuth Setup](#google-oauth-setup) and your frontend origin.
-5. Configure your email endpoint per [Email OTP Setup](#email-otp-setup).
-6. Run `bun dev` to develop locally, or `bun run build` and deploy `dist/` to any static host (with SPA fallback routing) pointed at your deployment.
+3. Set `OPENAI_API_KEY` on the deployment; keep both mode variables at their defaults (`local`).
+4. Run `bun dev` to use it at `http://localhost:5173`, or `bun run build` and deploy `dist/` to any static host (with SPA fallback routing) pointed at your deployment.
+
+**Hosted mode (public):**
+
+Same as above, plus:
+
+5. `npx convex env set APP_MODE hosted` and build the frontend with `VITE_APP_MODE=hosted`.
+6. Create your own Google OAuth client with the redirect URI from [Google OAuth Setup](#google-oauth-setup) and your production origin.
+7. `npx convex env set SITE_URL https://your-production-domain`.
 
 All credentials live in Convex environment variables and gitignored files — nothing secret is committed.
 
@@ -399,10 +424,11 @@ thesis-navigator/
 │   │   ├── ChatInterface    #   Q&A conversation with source cards
 │   │   ├── LibraryGrid      #   searchable paper grid
 │   │   ├── PdfUploader      #   drag-and-drop PDF pipeline (pdf.js + vision)
-│   │   ├── RequireAuth      #   route guard with return-path preservation
+│   │   ├── RequireAuth      #   mode-aware route guard (no-op in local mode)
 │   │   └── ui/              #   shadcn/ui primitives (only the ones used)
 │   ├── convex/              # Backend functions and schema
 │   │   ├── schema.ts        #   documents, chunks, papers, links, entities, …
+│   │   ├── workspace.ts     #   centralized workspace/mode resolution
 │   │   ├── documents.ts     #   library CRUD + chunk retrieval
 │   │   ├── askQuestion.ts   #   retrieval + gpt-4o cited answering
 │   │   ├── processDocument.ts   # vision table/figure extraction
@@ -410,9 +436,9 @@ thesis-navigator/
 │   │   ├── extractEntities.ts   # methods/datasets/metrics/concepts (NER)
 │   │   ├── researchAnalysis.ts  # novelty + gap analysis
 │   │   ├── citationGraph.ts     # graph storage queries/mutations
-│   │   └── auth/            #   email OTP + Google providers
+│   │   └── auth.ts          #   Convex Auth (Google provider, hosted mode)
 │   ├── hooks/               # useAuth
-│   ├── lib/                 # utilities (cn)
+│   ├── lib/                 # appMode (mode detection), utils (cn)
 │   └── pages/               # Landing, Auth, Dashboard, DocumentDetail,
 │                            # GraphExplorer, GapAnalysis, NotFound
 ├── docs/
@@ -424,11 +450,11 @@ thesis-navigator/
 
 ## Architecture
 
-The system is a single-page React app backed entirely by Convex — there is no separate server to run. All privileged work (LLM calls, OpenAlex lookups, database access) happens in Convex functions, which authenticate users via [Convex Auth](https://docs.convex.dev/auth) (email OTP + Google OAuth) and enforce per-user data isolation through a `userId` scope on every query and mutation.
+The system is a single-page React app backed entirely by Convex — there is no separate server to run. All privileged work (LLM calls, OpenAlex lookups, database access) happens in Convex functions.
 
 - **Frontend → backend**: the UI subscribes to Convex queries reactively (live-updating library, conversations, graph data) and invokes actions for anything that calls external APIs.
-- **Authentication**: Convex Auth with two providers — a 6-digit email OTP (15-minute expiry) and Google OAuth. Routes are guarded client-side by `RequireAuth`, and every backend function independently re-checks identity.
-- **Database**: Convex tables — `documents`, `chunks`, `conversations`, `messages`, `papers`, `paperLinks`, `entities`, `users` — all indexed by user.
+- **Workspace resolution**: a single helper (`src/convex/workspace.ts`) resolves the current workspace for every request — the fixed local workspace in local mode, or the authenticated user's identity in hosted mode. Application functions never implement authentication logic themselves.
+- **Database**: Convex tables — `documents`, `chunks`, `conversations`, `messages`, `papers`, `paperLinks`, `entities`, `users` — all scoped by workspace (the `userId` field).
 - **LLM layer**: four actions, each with a single responsibility (Q&A, vision extraction, entity extraction, research analysis). All use defensive JSON parsing with structured fallbacks so a malformed model response degrades to an empty report instead of an error.
 - **Document processing**: runs client-side (pdf.js) to avoid uploading original PDF binaries; page images are batched (5 at a time) through the vision model to bound cost and latency.
 - **Graph visualization**: vis-network with `forceAtlas2Based` physics; two views (citation, knowledge) rebuilt reactively from live Convex queries.
@@ -439,10 +465,10 @@ Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup
 
 ## Security
 
-- **Secrets stay server-side.** The OpenAI and email API keys are only read inside Convex actions (`process.env`) and are never shipped to the browser.
-- **Per-user isolation.** Every query and mutation scopes reads and writes by the authenticated user's ID; there is no cross-user access path.
+- **Secrets stay server-side.** The OpenAI API key and Google OAuth secret are only read inside Convex functions (`process.env`) and are never shipped to the browser.
+- **Hosted-mode isolation.** In hosted mode every query and mutation resolves its workspace through the centralized helper and scopes reads and writes to it; one user cannot access another user's data. Data access is never authorized by mere possession of an ID.
+- **Local mode is single-user by design.** It has no authentication and must not be exposed as a public multi-user service; everyone who reaches it shares one workspace.
 - **Client-side parsing.** PDFs are parsed in the browser; only extracted text and page images reach the backend.
-- **Auth.** OTP codes are 6 digits with a 15-minute expiry; sessions are managed by Convex Auth.
 - **Reporting.** Please report vulnerabilities privately via [GitHub Security Advisories](../../security/advisories) rather than public issues.
 
 ## License
@@ -457,3 +483,4 @@ Released under the [MIT License](LICENSE).
 - [ ] Dark mode
 - [ ] Streaming answers
 - [ ] Figure preview images in source cards (page images are already captured at upload)
+- [ ] Public read-only demo workspace

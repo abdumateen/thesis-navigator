@@ -12,6 +12,7 @@ import {
   Target,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { isLocalMode } from "@/lib/appMode";
 
 const features = [
   {
@@ -68,10 +69,11 @@ const fadeUp = {
 export default function Landing() {
   const navigate = useNavigate();
   const { isLoading, isAuthenticated } = useAuth();
+  const local = isLocalMode();
 
   const primaryAction = () =>
-    navigate(isAuthenticated ? "/dashboard" : "/auth");
-  const browseAction = () => navigate(isAuthenticated ? "/gaps" : "/auth");
+    navigate(local || isAuthenticated ? "/dashboard" : "/auth");
+  const browseAction = () => navigate(local || isAuthenticated ? "/gaps" : "/auth");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -103,7 +105,7 @@ export default function Landing() {
           >
             {isLoading
               ? "…"
-              : isAuthenticated
+              : local || isAuthenticated
                 ? "Open workspace"
                 : "Get started"}
             <ArrowRight className="size-3" />
@@ -138,7 +140,7 @@ export default function Landing() {
                   className="h-12 gap-2 px-7 text-sm"
                   onClick={primaryAction}
                 >
-                  {isAuthenticated ? "Open workspace" : "Get started"}
+                  {local || isAuthenticated ? "Open workspace" : "Get started"}
                   <ArrowRight className="size-4" />
                 </Button>
                 <Button
@@ -277,16 +279,16 @@ export default function Landing() {
               Your literature review starts here.
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Create an account to upload papers and build your private
-              research workspace — your library, questions, and analysis are
-              associated with your account and are not visible to other users.
+              {local
+                ? "This is a self-hosted workspace — open it and start uploading papers. No account needed."
+                : "Create an account to upload papers and build your private research workspace — your library, questions, and analysis are associated with your account and are not visible to other users."}
             </p>
             <Button
               size="lg"
               className="mt-8 h-12 gap-2 px-7 text-sm"
               onClick={primaryAction}
             >
-              {isAuthenticated ? "Go to workspace" : "Create your account"}
+              {local || isAuthenticated ? "Open workspace" : "Create your account"}
               <ArrowRight className="size-4" />
             </Button>
           </motion.div>

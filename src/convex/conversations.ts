@@ -1,14 +1,15 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { getWorkspaceContext } from "./workspace";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) return [];
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) return [];
     return await ctx.db
       .query("conversations")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", workspaceId))
       .order("desc")
       .collect();
   },
@@ -17,11 +18,11 @@ export const list = query({
 export const create = mutation({
   args: { title: v.string() },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) throw new Error("Not authenticated");
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) throw new Error("Not authenticated");
 
     return await ctx.db.insert("conversations", {
-      userId,
+      userId: workspaceId,
       title: args.title,
       createdAt: Date.now(),
     });
@@ -31,11 +32,11 @@ export const create = mutation({
 export const remove = mutation({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) throw new Error("Not authenticated");
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) throw new Error("Not authenticated");
 
     const conv = await ctx.db.get(args.conversationId);
-    if (!conv || conv.userId !== userId) throw new Error("Not found");
+    if (!conv || conv.userId !== workspaceId) throw new Error("Not found");
 
     const messages = await ctx.db
       .query("messages")
@@ -55,11 +56,11 @@ export const remove = mutation({
 export const getMessages = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) return [];
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) return [];
 
     const conv = await ctx.db.get(args.conversationId);
-    if (!conv || conv.userId !== userId) return [];
+    if (!conv || conv.userId !== workspaceId) return [];
 
     return await ctx.db
       .query("messages")
@@ -88,11 +89,11 @@ export const addMessage = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) throw new Error("Not authenticated");
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) throw new Error("Not authenticated");
 
     const conv = await ctx.db.get(args.conversationId);
-    if (!conv || conv.userId !== userId) throw new Error("Not found");
+    if (!conv || conv.userId !== workspaceId) throw new Error("Not found");
 
     return await ctx.db.insert("messages", {
       conversationId: args.conversationId,

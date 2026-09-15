@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { PdfUploader } from "@/components/PdfUploader";
 import { ChatInterface } from "@/components/ChatInterface";
 import { LibraryGrid } from "@/components/LibraryGrid";
+import { isLocalMode } from "@/lib/appMode";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +29,7 @@ type Tab = "library" | "chat";
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const local = isLocalMode();
   const [tab, setTab] = useState<Tab>("library");
   const [selectedDocs, setSelectedDocs] = useState<Set<Id<"documents">>>(
     new Set(),
@@ -41,7 +43,9 @@ export default function Dashboard() {
   const deleteConversation = useMutation(api.conversations.remove);
 
   const handleSignOut = async () => {
-    await signOut();
+    if (!local) {
+      await signOut();
+    }
     navigate("/");
   };
 
@@ -118,15 +122,24 @@ export default function Dashboard() {
               Thesis Navigator
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
-            onClick={handleSignOut}
-            title="Sign out"
-          >
-            <LogOut className="size-3.5" />
-          </Button>
+          {local ? (
+            <span
+              className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              title="Self-hosted mode — no authentication required"
+            >
+              Self-hosted
+            </span>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground hover:text-foreground"
+              onClick={handleSignOut}
+              title="Sign out"
+            >
+              <LogOut className="size-3.5" />
+            </Button>
+          )}
         </div>
 
         <div className="flex gap-1 px-3 pt-3">

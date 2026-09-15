@@ -1,14 +1,15 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { getWorkspaceContext } from "./workspace";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) return [];
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) return [];
     return await ctx.db
       .query("documents")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", workspaceId))
       .order("desc")
       .collect();
   },
@@ -31,11 +32,11 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) throw new Error("Not authenticated");
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) throw new Error("Not authenticated");
 
     const docId = await ctx.db.insert("documents", {
-      userId,
+      userId: workspaceId,
       title: args.title,
       filename: args.filename,
       fullText: args.fullText,
@@ -63,11 +64,11 @@ export const create = mutation({
 export const remove = mutation({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) throw new Error("Not authenticated");
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) throw new Error("Not authenticated");
 
     const doc = await ctx.db.get(args.documentId);
-    if (!doc || doc.userId !== userId) throw new Error("Not found");
+    if (!doc || doc.userId !== workspaceId) throw new Error("Not found");
 
     const chunks = await ctx.db
       .query("chunks")
@@ -85,8 +86,8 @@ export const remove = mutation({
 export const getChunks = query({
   args: { documentIds: v.array(v.id("documents")) },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject;
-    if (!userId) return [];
+    const { workspaceId } = await getWorkspaceContext(ctx);
+    if (!workspaceId) return [];
 
     const results: Array<{
       documentId: string;
@@ -103,7 +104,7 @@ export const getChunks = query({
 
     for (const docId of args.documentIds) {
       const doc = await ctx.db.get(docId);
-      if (!doc || doc.userId !== userId) continue;
+      if (!doc || doc.userId !== workspaceId) continue;
       const chunks = await ctx.db
         .query("chunks")
         .withIndex("by_document", (q) => q.eq("documentId", docId))

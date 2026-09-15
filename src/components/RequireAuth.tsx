@@ -1,3 +1,4 @@
+import { isLocalMode } from "@/lib/appMode";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,10 @@ export function RequireAuth({
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  if (isLocalMode()) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
