@@ -96,7 +96,7 @@ export const getChunks = query({
       chunks: Array<{
         text: string;
         index: number;
-        chunkType?: string;
+        chunkType?: "text" | "table" | "figure";
         pageNumber?: number;
         imageUrl?: string;
       }>;

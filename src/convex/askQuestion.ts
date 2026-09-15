@@ -13,7 +13,7 @@ function findRelevantChunks(
     chunks: Array<{
       text: string;
       index: number;
-      chunkType?: string;
+      chunkType?: "text" | "table" | "figure";
       pageNumber?: number;
       imageUrl?: string;
     }>;
@@ -24,7 +24,7 @@ function findRelevantChunks(
   documentTitle: string;
   chunkText: string;
   chunkIndex: number;
-  chunkType?: string;
+  chunkType?: "text" | "table" | "figure";
   pageNumber?: number;
   imageUrl?: string;
   score: number;
@@ -39,7 +39,7 @@ function findRelevantChunks(
     documentTitle: string;
     chunkText: string;
     chunkIndex: number;
-    chunkType?: string;
+    chunkType?: "text" | "table" | "figure";
     pageNumber?: number;
     imageUrl?: string;
     score: number;

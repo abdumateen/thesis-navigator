@@ -26,7 +26,7 @@ interface Message {
     documentTitle: string;
     chunkText: string;
     chunkIndex: number;
-    chunkType?: string;
+    chunkType?: "text" | "table" | "figure";
     pageNumber?: number;
   }>;
   createdAt: number;

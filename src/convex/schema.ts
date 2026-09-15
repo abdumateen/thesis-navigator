@@ -108,6 +108,11 @@ const schema = defineSchema(
             documentTitle: v.string(),
             chunkText: v.string(),
             chunkIndex: v.number(),
+            chunkType: v.optional(
+              v.union(v.literal("text"), v.literal("table"), v.literal("figure")),
+            ),
+            pageNumber: v.optional(v.number()),
+            imageUrl: v.optional(v.string()),
           }),
         ),
       ),
