@@ -135,7 +135,9 @@ When answering questions:
 - If the provided context doesn't contain enough information to fully answer, say so clearly
 - Use precise academic language
 - Structure your answers clearly with headers when appropriate
-- Highlight key findings, methodologies, and limitations when relevant`;
+- Highlight key findings, methodologies, and limitations when relevant
+- Format your answer using clean Markdown: headings, paragraphs, and bullet lists where appropriate. Prefer prose and lists for normal explanations; use a Markdown table only when a table genuinely improves readability, such as for comparisons or structured metrics
+- Never output raw HTML tags such as <br>, <div>, or <span> — use Markdown formatting only`;
 
     const userMessage = `Based on the following research paper excerpts, please answer this question. Cite your sources using [Source N] notation.
 

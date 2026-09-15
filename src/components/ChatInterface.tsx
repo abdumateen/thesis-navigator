@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
+import { Markdown } from "@/components/ui/markdown";
 
 interface Message {
   _id: Id<"messages">;
@@ -99,7 +100,11 @@ function MessageBubble({ message }: { message: Message }) {
               : "bg-muted/50 text-foreground"
           }`}
         >
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          {isUser ? (
+            <div className="whitespace-pre-wrap">{message.content}</div>
+          ) : (
+            <Markdown>{message.content}</Markdown>
+          )}
         </div>
         {message.sources && message.sources.length > 0 && (
           <div className="space-y-1.5">
