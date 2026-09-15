@@ -211,6 +211,16 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Upload research papers"
+      aria-disabled={isUploading}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !isUploading) {
+          e.preventDefault();
+          fileInputRef.current?.click();
+        }
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -218,7 +228,7 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       onClick={() => !isUploading && fileInputRef.current?.click()}
-      className={`group flex cursor-pointer flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center transition-colors ${
+      className={`group flex cursor-pointer flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center transition-colors focus-visible:outline focus-visible:outline-ring ${
         isUploading
           ? "pointer-events-none border-primary/30 bg-primary/5"
           : dragOver
@@ -232,6 +242,7 @@ export function PdfUploader({ onUploadComplete }: PdfUploaderProps) {
         accept=".pdf"
         multiple
         className="hidden"
+        aria-label="Select PDF files to upload"
         onChange={(e) => {
           if (e.target.files) handleUpload(e.target.files);
           e.target.value = "";

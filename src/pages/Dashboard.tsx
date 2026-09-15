@@ -187,14 +187,15 @@ export default function Dashboard() {
                       >
                         <MessageSquare className="size-3 shrink-0" />
                         <span className="flex-1 truncate">{conv.title}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteConversation(conv._id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                        >
+                      <button
+                        type="button"
+                        aria-label={`Delete conversation "${conv.title}"`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteConversation(conv._id);
+                        }}
+                        className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-foreground"
+                      >
                           <Trash2 className="size-3" />
                         </button>
                       </div>
@@ -263,14 +264,14 @@ export default function Dashboard() {
                         <p className="text-[10px] text-muted-foreground">
                           {doc.chunkCount} chunks
                         </p>
-                      </div>
-                      <button
+                      </div>                      <button
                         type="button"
+                        aria-label={`Delete document "${doc.title}"`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteDocument(doc._id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                        className="opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-foreground"
                       >
                         <Trash2 className="size-3" />
                       </button>
@@ -290,12 +291,19 @@ export default function Dashboard() {
           <div className="flex-1 overflow-hidden flex flex-col px-3 pb-3 pt-2">
             <ScrollArea className="flex-1 -mx-1 mb-3">
               <div className="space-y-1 px-1">
-                {docs.map((doc) => (
-                  <div
-                    key={doc._id}
-                    className="group flex items-center gap-2 rounded-md px-2 py-2 text-xs cursor-pointer text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground transition-colors"
-                    onClick={() => navigate(`/document/${doc._id}`)}
-                  >
+                {docs.map((doc) => (                    <div
+                      key={doc._id}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/document/${doc._id}`);
+                        }
+                      }}
+                      className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground focus-visible:outline focus-visible:outline-ring"
+                      onClick={() => navigate(`/document/${doc._id}`)}
+                    >
                     <FileText className="size-3.5 shrink-0" />
                     <span className="flex-1 truncate font-medium">{doc.title}</span>
                     <span className="text-[10px] text-muted-foreground/60">

@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, FileText } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 interface AuthProps {
   redirectAfterAuth?: string;
@@ -45,7 +45,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate(redirect);
@@ -111,14 +110,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">
-              <div className="flex justify-center">
-                    <div
-                      className="mb-4 mt-4 flex size-14 items-center justify-center rounded-xl bg-primary cursor-pointer"
-                      onClick={() => navigate("/")}
-                    >
-                      <FileText className="size-6 text-primary-foreground" />
-                    </div>
-                  </div>
+                <div className="flex justify-center">
+                  <Link
+                    to="/"
+                    aria-label="Thesis Navigator home"
+                    className="mb-4 mt-4 flex size-14 items-center justify-center rounded-xl bg-primary transition-opacity hover:opacity-90"
+                  >
+                    <FileText className="size-6 text-primary-foreground" />
+                  </Link>
+                </div>
                 <CardTitle className="text-xl">Welcome back</CardTitle>
                 <CardDescription>
                   Sign in to access your research workspace
@@ -126,14 +126,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
                 <CardContent>
-                  
+                  <label htmlFor="email" className="sr-only">
+                    Email address
+                  </label>
                   <div className="relative flex items-center gap-2">
                     <div className="relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        id="email"
                         name="email"
                         placeholder="name@example.com"
                         type="email"
+                        autoComplete="email"
                         className="pl-9"
                         disabled={isLoading}
                         required

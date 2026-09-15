@@ -372,7 +372,10 @@ export default function DocumentDetail() {
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 Status
               </p>
-              <p className="mt-0.5 text-lg font-semibold text-primary">
+              <p
+                className="mt-0.5 text-lg font-semibold text-primary"
+                title="Text extracted and indexed"
+              >
                 Ready
               </p>
             </div>
@@ -381,7 +384,7 @@ export default function DocumentDetail() {
           <Button
             variant="outline"
             className="w-full mt-4 h-9 text-xs gap-2 border-border/60"
-            onClick={() => setShowChunks(!showChunks)}
+            onClick={() => setShowChunks((open) => !open)}
           >
             <BookOpen className="size-3.5" />
             {showChunks ? "Hide extracted text" : "View extracted text"}
@@ -390,7 +393,15 @@ export default function DocumentDetail() {
           <Button
             variant="ghost"
             className="w-full mt-2 h-9 text-xs gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleDelete}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Remove this document and all of its indexed chunks?",
+                )
+              ) {
+                void handleDelete();
+              }
+            }}
           >
             <Trash2 className="size-3.5" />
             Remove document

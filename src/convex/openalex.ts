@@ -1,7 +1,7 @@
 "use node";
 
 const BASE_URL = "https://api.openalex.org";
-const MAILTO = "thesis-navigator@freebuff.com";
+const MAILTO = "thesis-navigator@open-source.app";
 
 export interface OpenAlexWork {
   id: string;

@@ -62,8 +62,12 @@ export function LibraryGrid() {
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-border px-6 py-3 bg-card/50">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <label htmlFor="library-search" className="sr-only">
+            Search papers by title or filename
+          </label>
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
+            id="library-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -129,8 +133,17 @@ export function LibraryGrid() {
             {filtered.map((doc) => (
               <div
                 key={doc._id}
+                role="link"
+                tabIndex={0}
+                aria-label={`Open "${doc.title}"`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/document/${doc._id}`);
+                  }
+                }}
                 onClick={() => navigate(`/document/${doc._id}`)}
-                className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5"
+                className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 focus-visible:outline focus-visible:outline-ring"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -140,6 +153,7 @@ export function LibraryGrid() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={`Open "${doc.title}"`}
                       className="size-7 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -151,6 +165,7 @@ export function LibraryGrid() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={`Remove "${doc.title}"`}
                       className="size-7 text-muted-foreground hover:text-destructive"
                       onClick={(e) => handleDelete(e, doc._id)}
                     >
