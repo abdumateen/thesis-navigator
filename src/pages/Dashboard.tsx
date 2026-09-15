@@ -7,6 +7,7 @@ import { PdfUploader } from "@/components/PdfUploader";
 import { ChatInterface } from "@/components/ChatInterface";
 import { LibraryGrid } from "@/components/LibraryGrid";
 import { isLocalMode } from "@/lib/appMode";
+import { useAIConfig, formatAIProviderLabel, formatAIProviderTooltip } from "@/lib/aiConfig";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const local = isLocalMode();
+  const ai = useAIConfig();
   const [tab, setTab] = useState<Tab>("library");
   const [selectedDocs, setSelectedDocs] = useState<Set<Id<"documents">>>(
     new Set(),
@@ -362,6 +364,14 @@ export default function Dashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {ai && (
+              <span
+                className="hidden md:inline-block rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-medium"
+                title={formatAIProviderTooltip(ai)}
+              >
+                {formatAIProviderLabel(ai)}
+              </span>
+            )}
             {tab === "chat" && selectedDocs.size > 0 && (
               <span className="rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-[10px] font-medium">
                 {selectedDocs.size} paper{selectedDocs.size !== 1 ? "s" : ""} selected

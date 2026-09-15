@@ -23,7 +23,7 @@ Configure (see [Deployment Modes](#deployment-modes) for details):
 ```bash
 cp .env.example .env.local        # frontend config; VITE_APP_MODE=local is the default
 npx convex dev                    # terminal 1 — creates your Convex project, prints the URL
-npx convex env set OPENAI_API_KEY sk-...   # backend config
+npx convex env set AI_API_KEY sk-...   # backend config
 ```
 
 Run:
@@ -76,7 +76,7 @@ The default and recommended way to run the project.
 - **Single user** — one shared workspace; no accounts, no sign-in screen, no redirects to a login page.
 - **No email infrastructure** — no SMTP, no OTP codes, no email provider of any kind.
 - **No OAuth configuration** — Google credentials are never needed.
-- Requires **your own Convex deployment** and **your own `OPENAI_API_KEY`**.
+- Requires **your own Convex deployment** and **your own AI provider key**.
 - **Not for public multi-user hosting.** Anyone who can reach the app shares the same workspace.
 
 ### Hosted / Multi-User
@@ -100,6 +100,54 @@ Switching modes is two variables: `APP_MODE=hosted` on the Convex deployment and
 - **Research gap analysis** — cross-library synthesis of what is missing, contested, or methodologically weak, with suggested research questions.
 - **Novelty assessment** — per-paper analysis of novel contributions, methodology strengths/limitations, and position in the field.
 
+## AI Providers
+
+Thesis Navigator is provider-agnostic. All AI features — Q&A, table/figure extraction, entity extraction, novelty and gap analysis — run through one OpenAI-compatible interface, so you can point the application at OpenAI, [OpenRouter](https://openrouter.ai), or any custom OpenAI-compatible endpoint without changing code.
+
+Configuration lives on your Convex deployment (server-side only — API keys are never sent to the browser):
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `AI_PROVIDER` | No | `openai` (default), `openrouter`, or `custom` |
+| `AI_BASE_URL` | For custom | OpenAI-compatible endpoint; defaults per provider |
+| `AI_API_KEY` | Yes* | Secret key for the provider |
+| `AI_MODEL` | No | Reasoning model (Q&A, novelty, gap analysis). Default: `gpt-4o` |
+| `AI_EXTRACTION_MODEL` | No | Extraction model (entities, references). Default: `gpt-4o-mini` |
+| `AI_VISION_MODEL` | No | Vision model (table/figure extraction). Defaults to the extraction model |
+
+\* The legacy `OPENAI_API_KEY` variable still works and is used as a fallback when no `AI_*` variables are set, so existing deployments keep working after upgrading. New deployments should prefer `AI_API_KEY`.
+
+**OpenAI:**
+
+```bash
+npx convex env set AI_PROVIDER openai
+npx convex env set AI_BASE_URL https://api.openai.com/v1
+npx convex env set AI_API_KEY sk-...
+npx convex env set AI_MODEL gpt-4o
+```
+
+**OpenRouter** — one key, access to Claude, DeepSeek, Kimi, Gemini, Mistral and many other models through its OpenAI-compatible API. The model string chooses the upstream provider:
+
+```bash
+npx convex env set AI_PROVIDER openrouter
+npx convex env set AI_BASE_URL https://openrouter.ai/api/v1
+npx convex env set AI_API_KEY sk-or-...
+npx convex env set AI_MODEL anthropic/claude-sonnet-4
+```
+
+**Custom OpenAI-compatible provider** — self-hosted gateways (vLLM, LiteLLM, Ollama's compatible endpoint) or any vendor exposing an OpenAI-shaped chat-completions API:
+
+```bash
+npx convex env set AI_PROVIDER custom
+npx convex env set AI_BASE_URL https://your-provider.example.com/v1
+npx convex env set AI_API_KEY your-key
+npx convex env set AI_MODEL your-model-name
+```
+
+Models differ in what they support. The three model roles map to the application's actual usage: reasoning (long-context Q&A and analysis), extraction (JSON-output tasks), and vision (PDF page images for tables/figures). If your chosen model cannot handle a role — for example, a text-only model for vision — configure a capable model with the role-specific variable. The active provider and models are shown in the dashboard header.
+
+API keys must be configured server-side and should never be committed to Git.
+
 ## How It Works
 
 ```mermaid
@@ -111,7 +159,7 @@ flowchart TB
     UI -->|renders pages to images| PDF["pdf.js<br/>(client-side PDF parsing)"]
 
     CB -->|"retrieve & store chunks"| DB[("Convex database")]
-    CB -->|"Q&A · vision extraction ·<br/>entity & gap analysis"| OAI["OpenAI API<br/>(gpt-4o / gpt-4o-mini vision)"]
+    CB -->|"Q&A · vision extraction ·<br/>entity & gap analysis"| AI["AI provider (OpenAI-compatible)<br/>OpenAI / OpenRouter / custom"]
 
     subgraph ResearchIntelligence ["Research intelligence"]
         QA["Q&A with citations"]
@@ -120,7 +168,7 @@ flowchart TB
         GA["Gap analysis"]
     end
 
-    PDF -->|page images| OAI
+    PDF -->|page images| AI
     OAI --> ResearchIntelligence
     OA --> CN
     DB --> ResearchIntelligence
@@ -135,7 +183,7 @@ flowchart TB
 | Frontend | React 19 + Vite + TypeScript | Application UI |
 | Styling | Tailwind CSS v4 + shadcn/ui | Interface components and theming |
 | Backend | Convex | Backend functions, database, and authentication (hosted mode) |
-| LLM | OpenAI (`gpt-4o`, `gpt-4o-mini` vision) | Q&A, table/figure extraction, entity and gap analysis |
+| LLM | Any OpenAI-compatible provider (OpenAI, OpenRouter, or custom; defaults `gpt-4o` / `gpt-4o-mini`) | Q&A, table/figure extraction, entity and gap analysis |
 | Metadata | OpenAlex | Academic paper metadata and citation counts |
 | PDF parsing | pdf.js (client-side) | Text extraction and page rasterization |
 | Graphs | vis-network | Citation network and knowledge graph visualization |
@@ -196,11 +244,11 @@ The AI layer has four distinct roles — retrieval, LLM reasoning, structured ex
 | Stage | What actually happens | Where |
 | --- | --- | --- |
 | **Retrieval** | Keyword/term-frequency scoring over stored chunks; top-k selection; type-aware boosts. No embeddings yet. | `src/convex/askQuestion.ts` |
-| **LLM reasoning** | `gpt-4o` answers strictly from the retrieved context, using `[Source N]` citation notation. | `src/convex/askQuestion.ts` |
+| **LLM reasoning** | The configured reasoning model answers strictly from the retrieved context, using `[Source N]` citation notation. | `src/convex/askQuestion.ts` |
 | **Structured extraction** | Vision model parses page images for tables/figures; text models extract entity lists and analyses as JSON, parsed defensively with regex + `JSON.parse` fallbacks. | `src/convex/processDocument.ts`, `extractEntities.ts`, `extractReferences.ts`, `researchAnalysis.ts` |
 | **Graph construction** | Deterministic storage layer: extracted references become papers + `cites` links; entities become typed nodes shared across documents. | `src/convex/citationGraph.ts`, `openalex.ts` |
 
-**Cross-paper analysis** (gap detection and novelty assessment) sends condensed paper overviews — introduction and conclusion windows, capped to fit the context budget — to `gpt-4o`, which must ground every identified gap in the papers actually provided. The result is a structured report: research landscape, gaps with suggested questions, contested areas, methodology gaps, and future directions.
+**Cross-paper analysis** (gap detection and novelty assessment) sends condensed paper overviews — introduction and conclusion windows, capped to fit the context budget — to the configured reasoning model, which must ground every identified gap in the papers actually provided. The result is a structured report: research landscape, gaps with suggested questions, contested areas, methodology gaps, and future directions.
 
 See [`docs/ai-pipeline.md`](docs/ai-pipeline.md) for models, prompts, chunking parameters, and scoring details.
 
@@ -308,7 +356,10 @@ Identify unresolved questions, missing evaluations, conflicting findings, and pr
 | `VITE_APP_MODE` | Vite frontend (`.env.local`) | `local` (default when unset) or `hosted` |
 | `VITE_CONVEX_URL` | Vite frontend (`.env.local`) | Your deployment's `*.convex.cloud` URL — the browser talks to it directly |
 | `APP_MODE` | Convex backend | `local` (default when unset) or `hosted` |
-| `OPENAI_API_KEY` | Convex backend | OpenAI key — Q&A answers (`gpt-4o`), table/figure vision extraction, entity and gap analysis |
+| `AI_PROVIDER` | Convex backend | `openai` (default), `openrouter`, or `custom` — see [AI Providers](#ai-providers) |
+| `AI_API_KEY` | Convex backend | Secret key for the configured AI provider |
+| `AI_MODEL` | Convex backend | Reasoning model (optional; default `gpt-4o`) |
+| `OPENAI_API_KEY` | Convex backend | Legacy OpenAI key — still works when no `AI_*` variables are set |
 
 That is the complete local-mode configuration. No auth or email variables exist.
 
@@ -324,7 +375,7 @@ Convex sets `CONVEX_SITE_URL` automatically (your `*.convex.site` address); it i
 
 Frontend variables are not secret — they are embedded in the browser bundle. Backend variables live only on the Convex deployment: set them with `npx convex env set KEY value` or the dashboard (Settings → Environment Variables), never in `.env.local`.
 
-Without `OPENAI_API_KEY`, uploads still work in text-only mode, but Q&A, graph processing, and gap analysis return configuration errors.
+Without an AI key (`AI_API_KEY`, or legacy `OPENAI_API_KEY`), uploads still work in text-only mode, but Q&A, graph processing, and gap analysis return configuration errors.
 
 ## Local Development
 
@@ -430,7 +481,7 @@ thesis-navigator/
 │   │   ├── schema.ts        #   documents, chunks, papers, links, entities, …
 │   │   ├── workspace.ts     #   centralized workspace/mode resolution
 │   │   ├── documents.ts     #   library CRUD + chunk retrieval
-│   │   ├── askQuestion.ts   #   retrieval + gpt-4o cited answering
+│   │   ├── askQuestion.ts   #   retrieval + provider-agnostic cited answering
 │   │   ├── processDocument.ts   # vision table/figure extraction
 │   │   ├── extractReferences.ts # reference extraction → OpenAlex resolution
 │   │   ├── extractEntities.ts   # methods/datasets/metrics/concepts (NER)

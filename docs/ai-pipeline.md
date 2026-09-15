@@ -9,6 +9,8 @@ The pipeline has four distinct stages that should not be conflated:
 3. **Structured extraction** — asking models for structured data (tables, entities, references, analyses) and parsing it defensively.
 4. **Graph construction** — deterministic storage of extracted facts; no AI involved.
 
+Throughout this document, *reasoning model* and *extraction model* refer to the configured provider's models (see [AI Providers](../README.md#ai-providers) in the README). The defaults are `gpt-4o` (reasoning) and `gpt-4o-mini` (extraction/vision); all calls go through the shared OpenAI-compatible client in `src/convex/ai/provider.ts`, so the same pipeline runs against OpenAI, OpenRouter, or any custom OpenAI-compatible endpoint.
+
 ---
 
 ## Document ingestion

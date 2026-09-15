@@ -2,11 +2,7 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import OpenAI from "openai";
-
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+import { getAI, unwrapAIError } from "./ai/provider";
 
 export const analyzeNovelty = action({
   args: {
@@ -14,22 +10,19 @@ export const analyzeNovelty = action({
     title: v.string(),
   },
   handler: async (_ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured.");
-    }
-
-    const openai = getOpenAI();
+    const { client, models } = getAI();
 
     const intro = args.fullText.slice(0, Math.floor(args.fullText.length * 0.25));
     const conclusion = args.fullText.slice(Math.floor(args.fullText.length * 0.8));
     const sample = `${intro}\n\n${conclusion}`.slice(0, 10000);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert academic research analyst. Analyze the paper and identify its novel contributions.
+    const response = await client.chat.completions
+      .create({
+        model: models.reasoning,
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert academic research analyst. Analyze the paper and identify its novel contributions.
 
 Return ONLY a JSON object with this structure:
 {
@@ -66,7 +59,8 @@ Rules:
       ],
       temperature: 0.2,
       max_tokens: 2000,
-    });
+    })
+      .catch((err) => unwrapAIError(err));
 
     const content = response.choices[0]?.message?.content ?? "{}";
     const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -102,15 +96,11 @@ export const analyzeGaps = action({
     ),
   },
   handler: async (_ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured.");
-    }
-
     if (args.papers.length === 0) {
       throw new Error("No papers provided for analysis.");
     }
 
-    const openai = getOpenAI();
+    const { client, models } = getAI();
 
     const paperSummaries = args.papers.map((paper) => {
       const intro = paper.fullText.slice(0, Math.floor(paper.fullText.length * 0.15));
@@ -120,12 +110,13 @@ export const analyzeGaps = action({
 
     const totalContext = paperSummaries.join("\n\n---\n\n").slice(0, 25000);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert academic research analyst specializing in identifying research gaps and opportunities.
+    const response = await client.chat.completions
+      .create({
+        model: models.reasoning,
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert academic research analyst specializing in identifying research gaps and opportunities.
 
 Analyze the collection of papers provided and identify what is missing, contested, or unresolved in this research area.
 
@@ -178,7 +169,8 @@ Rules:
       ],
       temperature: 0.3,
       max_tokens: 3000,
-    });
+    })
+      .catch((err) => unwrapAIError(err));
 
     const content = response.choices[0]?.message?.content ?? "{}";
     const jsonMatch = content.match(/\{[\s\S]*\}/);

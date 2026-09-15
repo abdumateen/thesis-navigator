@@ -2,37 +2,35 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import OpenAI from "openai";
+import { getAI, unwrapAIError } from "./ai/provider";
 import { searchByTitle } from "./openalex";
 
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
 async function extractReferenceStrings(fullText: string): Promise<string[]> {
-  const openai = getOpenAI();
+  const { client, models } = getAI();
 
   const refSection = fullText.slice(Math.floor(fullText.length * 0.7));
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `Extract all academic references/citations from the text. Return ONLY a JSON array of reference title strings (the title portion of each citation). Example:
+  const response = await client.chat.completions
+    .create({
+      model: models.extraction,
+      messages: [
+        {
+          role: "system",
+          content: `Extract all academic references/citations from the text. Return ONLY a JSON array of reference title strings (the title portion of each citation). Example:
 ["Deep Residual Learning for Image Recognition", "Attention Is All You Need", "BERT: Pre-training of Deep Bidirectional Transformers"]
 
 If no references are found, return an empty array: []
 Do not include any text before or after the JSON array.`,
-      },
-      {
-        role: "user",
-        content: `Extract reference titles from this section of an academic paper:\n\n${refSection.slice(-6000)}`,
-      },
-    ],
-    temperature: 0.1,
-    max_tokens: 2000,
-  });
+        },
+        {
+          role: "user",
+          content: `Extract reference titles from this section of an academic paper:\n\n${refSection.slice(-6000)}`,
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 2000,
+    })
+    .catch((err) => unwrapAIError(err));
 
   const content = response.choices[0]?.message?.content ?? "[]";
 
@@ -55,10 +53,6 @@ export const processDocumentReferences = action({
     fullText: v.string(),
   },
   handler: async (ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured.");
-    }
-
     const referenceTitles = await extractReferenceStrings(args.fullText);
 
     if (referenceTitles.length === 0) {

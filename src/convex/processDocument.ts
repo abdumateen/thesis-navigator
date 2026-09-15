@@ -2,11 +2,7 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import OpenAI from "openai";
-
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+import { getAI, unwrapAIError } from "./ai/provider";
 
 export const extractVisualContent = action({
   args: {
@@ -18,14 +14,7 @@ export const extractVisualContent = action({
     ),
   },
   handler: async (ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error(
-        "OPENAI_API_KEY is not configured. Set it as an environment variable " +
-          "on your Convex deployment to enable table and figure extraction.",
-      );
-    }
-
-    const openai = getOpenAI();
+    const { client, models } = getAI();
     const results: Array<{
       pageNumber: number;
       chunkType: "table" | "figure";
@@ -39,8 +28,9 @@ export const extractVisualContent = action({
 
       const promises = batch.map(async (page) => {
         try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+          const response = await client.chat.completions
+            .create({
+              model: models.vision,
             messages: [
               {
                 role: "system",
@@ -90,7 +80,8 @@ Otherwise, for each table or figure found, respond in this exact format:
             ],
             max_tokens: 1500,
             temperature: 0.1,
-          });
+          })
+            .catch((err) => unwrapAIError(err));
 
           const content = response.choices[0]?.message?.content ?? "";
 

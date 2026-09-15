@@ -2,13 +2,7 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import OpenAI from "openai";
-
-function getOpenAI() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-}
+import { getAI, unwrapAIError } from "./ai/provider";
 
 function findRelevantChunks(
   query: string,
@@ -89,12 +83,7 @@ export const ask = action({
     documentIds: v.array(v.id("documents")),
   },
   handler: async (ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error(
-        "OPENAI_API_KEY is not configured. Set it as an environment variable " +
-          "on your Convex deployment to enable answering questions.",
-      );
-    }
+    const { client, models } = getAI();
 
     const { api } = await import("./_generated/api.js");
     const allChunks = await ctx.runQuery(api.documents.getChunks, {
@@ -156,16 +145,17 @@ Question: ${args.question}
 ${context}
 ---`;
 
-    const openai = getOpenAI();
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
-    });
+    const response = await client.chat.completions
+      .create({
+        model: models.reasoning,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      })
+      .catch((err) => unwrapAIError(err));
 
     const answer = response.choices[0]?.message?.content ?? "No response generated.";
 

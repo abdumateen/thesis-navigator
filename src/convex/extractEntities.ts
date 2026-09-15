@@ -2,22 +2,14 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import OpenAI from "openai";
-
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+import { getAI, unwrapAIError } from "./ai/provider";
 
 export const extractEntities = action({
   args: {
     fullText: v.string(),
   },
   handler: async (_ctx, args) => {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured.");
-    }
-
-    const openai = getOpenAI();
+    const { client, models } = getAI();
 
     const intro = args.fullText.slice(0, Math.floor(args.fullText.length * 0.3));
     const methods = args.fullText.slice(
@@ -26,8 +18,9 @@ export const extractEntities = action({
     );
     const sample = `${intro}\n\n${methods}`.slice(0, 8000);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const response = await client.chat.completions
+      .create({
+        model: models.extraction,
       messages: [
         {
           role: "system",
@@ -53,7 +46,8 @@ Rules:
       ],
       temperature: 0.1,
       max_tokens: 1000,
-    });
+    })
+      .catch((err) => unwrapAIError(err));
 
     const content = response.choices[0]?.message?.content ?? "{}";
 
